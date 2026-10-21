@@ -1,0 +1,1731 @@
+/* ==========================================================================
+   AdminUserManagement.css
+   Pure CSS Stylesheet for History Quest - Quản lý người dùng
+   Không dùng Tailwind CSS, Bootstrap hay bất kỳ thư viện UI nào khác.
+   100% Pure CSS - Responsive - Be Vietnam Pro Typography
+   ========================================================================== */
+
+/* --- CSS Variables & Root Theme --- */
+:root {
+  --font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Brand Palette */
+  --color-primary: #4d41df;
+  --color-primary-hover: #3d31ad;
+  --color-primary-light: #e3dfff;
+  --color-primary-container: #675df9;
+  --color-primary-shadow: #3622ca;
+  
+  --color-bg: #f5f8ff;
+  --color-surface: #ffffff;
+  --color-surface-low: #f5f2ff;
+  --color-surface-container: #eeecff;
+  --color-surface-high: #e7e6ff;
+  
+  --color-text-main: #171937;
+  --color-text-muted: #777587;
+  --color-text-variant: #464555;
+  --color-border: #e2e0ee;
+  --color-border-subtle: #f0edf8;
+  
+  /* Status & Accents */
+  --color-success: #008470;
+  --color-success-bg: #eaf9f5;
+  --color-success-text: #006859;
+  
+  --color-warning-amber: #b27b00;
+  --color-warning-bg: #fff9e6;
+  --color-warning-border: #ffe2b3;
+  --color-warning-accent: #ffca68;
+  
+  --color-error: #ba1a1a;
+  --color-error-bg: #ffdad6;
+  --color-error-text: #93000a;
+  --color-error-shadow: #93000a;
+  
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(23, 25, 55, 0.04);
+  --shadow-card: 0 4px 20px rgba(108, 99, 255, 0.05);
+  --shadow-card-hover: 0 8px 24px rgba(108, 99, 255, 0.1);
+  --shadow-modal: 0 16px 40px rgba(23, 25, 55, 0.18);
+}
+
+/* Base Reset for component container */
+.aum-root {
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.aum-root *,
+.aum-root *::before,
+.aum-root *::after {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Top Demo State Simulator Bar
+   ========================================================================== */
+.aum-sim-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(8px);
+}
+
+.aum-sim-bar-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aum-sim-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-variant);
+}
+
+.aum-sim-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-container);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.aum-sim-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.aum-sim-btn {
+  border: none;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  transition: all 0.2s ease;
+  background-color: var(--color-surface-low);
+  color: var(--color-text-variant);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aum-sim-btn:hover {
+  background-color: var(--color-surface-high);
+  color: var(--color-primary);
+}
+
+.aum-sim-btn.active {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(77, 65, 223, 0.3);
+}
+
+.aum-sim-btn-purple {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.aum-sim-btn-purple:hover {
+  background-color: #d7d2ff;
+}
+
+.aum-sim-btn-danger {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.aum-sim-btn-danger:hover {
+  background-color: #ffc4be;
+}
+
+/* ==========================================================================
+   Main Shell Layout
+   ========================================================================== */
+.aum-layout {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 54px);
+  position: relative;
+}
+
+/* ==========================================================================
+   Sidebar Navigation
+   ========================================================================== */
+.aum-sidebar {
+  width: 260px;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  z-index: 40;
+}
+
+.aum-brand-header {
+  padding: 24px 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aum-brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(77, 65, 223, 0.25);
+  font-size: 22px;
+}
+
+.aum-brand-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.aum-brand-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-top: 4px;
+}
+
+.aum-nav-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aum-nav-item {
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-variant);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.aum-nav-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aum-nav-icon {
+  font-size: 19px;
+  transition: transform 0.2s ease;
+}
+
+.aum-nav-item:hover {
+  background-color: var(--color-surface-low);
+  color: var(--color-primary);
+}
+
+.aum-nav-item:hover .aum-nav-icon {
+  transform: scale(1.1);
+}
+
+.aum-nav-item.active {
+  background-color: var(--color-surface-low);
+  color: var(--color-primary);
+  font-weight: 700;
+  border-color: rgba(77, 65, 223, 0.15);
+  box-shadow: 0 2px 8px rgba(77, 65, 223, 0.06);
+}
+
+.aum-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  animation: aum-pulse 1.8s infinite;
+}
+
+.aum-nav-counter {
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+@keyframes aum-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.aum-sidebar-footer {
+  padding: 16px;
+  margin: 12px;
+  border-radius: var(--radius-lg);
+  background-color: rgba(245, 242, 255, 0.6);
+  border: 1px solid var(--color-border);
+}
+
+.aum-version-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.aum-version-tag {
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.aum-logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background-color: transparent;
+  color: var(--color-error);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.aum-logout-btn:hover {
+  background-color: var(--color-error-bg);
+}
+
+/* ==========================================================================
+   Main Content Area
+   ========================================================================== */
+.aum-main {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Breadcrumb & Top Bar */
+.aum-top-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .aum-top-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.aum-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.aum-breadcrumb-current {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.aum-page-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.aum-page-desc {
+  font-size: 14px;
+  color: var(--color-text-variant);
+  margin-top: 4px;
+  max-width: 680px;
+  line-height: 1.5;
+}
+
+.aum-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.aum-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-main);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  font-size: 18px;
+}
+
+.aum-icon-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.aum-notify-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-error);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.aum-admin-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.aum-admin-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary-container);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.aum-admin-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.aum-admin-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  line-height: 1.2;
+}
+
+.aum-admin-role {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* Tactile Push Button */
+.aum-btn-tactile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--color-primary-shadow);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.aum-btn-tactile:hover {
+  background-color: var(--color-primary-container);
+}
+
+.aum-btn-tactile:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--color-primary-shadow);
+}
+
+.aum-btn-tactile-danger {
+  background-color: var(--color-error);
+  box-shadow: 0 4px 0 var(--color-error-shadow);
+}
+
+.aum-btn-tactile-danger:hover {
+  opacity: 0.95;
+}
+
+.aum-btn-tactile-danger:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--color-error-shadow);
+}
+
+/* ==========================================================================
+   4 KPI Stats Grid
+   ========================================================================== */
+.aum-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .aum-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .aum-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.aum-stat-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.aum-stat-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.aum-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aum-stat-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-variant);
+}
+
+.aum-stat-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.aum-stat-icon-purple {
+  background-color: rgba(227, 223, 255, 0.7);
+  color: var(--color-primary);
+}
+
+.aum-stat-icon-teal {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.aum-stat-icon-red {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.aum-stat-icon-amber {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-amber);
+}
+
+.aum-stat-body {
+  margin-top: 14px;
+}
+
+.aum-stat-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.aum-stat-value.danger {
+  color: var(--color-error);
+}
+
+.aum-stat-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.aum-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.aum-badge-teal {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.aum-badge-red {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.aum-badge-amber {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-amber);
+}
+
+.aum-stat-subtext {
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Search & Filter Toolbar
+   ========================================================================== */
+.aum-filter-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 1024px) {
+  .aum-filter-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.aum-search-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.aum-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.aum-search-input {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  font-family: var(--font-family);
+  color: var(--color-text-main);
+  background-color: var(--color-surface);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.aum-search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(77, 65, 223, 0.12);
+}
+
+.aum-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.aum-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.aum-select-wrapper {
+  position: relative;
+}
+
+.aum-select {
+  appearance: none;
+  padding: 10px 36px 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-family);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aum-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(77, 65, 223, 0.12);
+}
+
+.aum-select-arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  font-size: 14px;
+}
+
+.aum-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-variant);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aum-btn-secondary:hover {
+  background-color: var(--color-surface-low);
+  color: var(--color-primary);
+}
+
+.aum-btn-export {
+  background-color: var(--color-surface-low);
+  border-color: rgba(77, 65, 223, 0.2);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.aum-btn-export:hover {
+  background-color: var(--color-surface-high);
+}
+
+/* ==========================================================================
+   Table & Data View Area
+   ========================================================================== */
+.aum-table-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.aum-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.aum-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.aum-table thead tr {
+  background-color: rgba(245, 242, 255, 0.6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aum-table th {
+  padding: 14px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.aum-table th.align-right {
+  text-align: right;
+}
+
+.aum-table tbody tr {
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.aum-table tbody tr:hover {
+  background-color: rgba(245, 242, 255, 0.4);
+}
+
+.aum-table tbody tr.row-locked {
+  background-color: rgba(255, 218, 214, 0.15);
+}
+
+.aum-table td {
+  padding: 16px 18px;
+  vertical-align: middle;
+}
+
+/* Table Cells Details */
+.aum-member-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aum-avatar-initials {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.aum-avatar-purple {
+  background-color: var(--color-primary-container);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(77, 65, 223, 0.2);
+}
+
+.aum-avatar-teal {
+  background-color: var(--color-success);
+  color: #ffffff;
+}
+
+.aum-avatar-blue {
+  background-color: #8c84ff;
+  color: #ffffff;
+}
+
+.aum-avatar-slate {
+  background-color: var(--color-surface-high);
+  color: var(--color-primary);
+}
+
+.aum-avatar-amber {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-amber);
+  border: 1px solid var(--color-warning-border);
+}
+
+.aum-avatar-red {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.aum-member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aum-member-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.aum-member-sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.aum-member-sub.danger {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.aum-email-cell {
+  color: var(--color-text-variant);
+  font-family: monospace, sans-serif;
+  font-size: 12px;
+}
+
+/* Badges for roles and status */
+.aum-chip-role {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.aum-chip-student {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.aum-chip-editor {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-amber);
+  border: 1px solid var(--color-warning-border);
+}
+
+.aum-chip-admin {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.aum-progress-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 170px;
+}
+
+.aum-progress-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.aum-progress-count {
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.aum-progress-dot {
+  color: var(--color-text-muted);
+}
+
+.aum-xp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--color-warning-bg);
+  color: #8c5900;
+}
+
+.aum-progress-track {
+  width: 110px;
+  height: 6px;
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.aum-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.aum-progress-fill-teal {
+  background-color: var(--color-success);
+}
+
+.aum-progress-fill-primary {
+  background-color: var(--color-primary-container);
+}
+
+.aum-progress-fill-amber {
+  background-color: var(--color-warning-accent);
+}
+
+.aum-progress-fill-gray {
+  background-color: var(--color-text-muted);
+}
+
+/* Zero inline style progress helpers */
+.aum-p-w-85 { width: 85%; }
+.aum-p-w-45 { width: 45%; }
+.aum-p-w-78 { width: 78%; }
+.aum-p-w-65 { width: 65%; }
+.aum-p-w-100 { width: 100%; }
+.aum-p-w-0 { width: 0%; }
+
+.aum-date-cell {
+  font-size: 12px;
+  color: var(--color-text-variant);
+  font-weight: 500;
+}
+
+.aum-chip-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.aum-status-active {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.aum-status-dot-active {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-success-text);
+}
+
+.aum-status-locked {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.aum-status-dot-locked {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-error);
+}
+
+.aum-status-pending {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-amber);
+}
+
+.aum-status-dot-pending {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-warning-amber);
+}
+
+.aum-action-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.aum-btn-action {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.aum-btn-action:hover {
+  background-color: var(--color-surface-container);
+  color: var(--color-primary);
+}
+
+.aum-btn-action.action-unlock:hover {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.aum-btn-action.action-danger:hover {
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+}
+
+/* ==========================================================================
+   Skeleton Loading State
+   ========================================================================== */
+.aum-skeleton-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.aum-skeleton-bar {
+  background: linear-gradient(90deg, #ece9fb 25%, #f6f5ff 50%, #ece9fb 75%);
+  background-size: 200% 100%;
+  animation: aum-shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.aum-skeleton-header {
+  height: 24px;
+  width: 200px;
+}
+
+.aum-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.aum-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.aum-skeleton-text-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aum-skeleton-text-long {
+  height: 14px;
+  width: 35%;
+}
+
+.aum-skeleton-text-short {
+  height: 10px;
+  width: 20%;
+}
+
+.aum-skeleton-chip {
+  width: 90px;
+  height: 24px;
+  border-radius: var(--radius-full);
+}
+
+@keyframes aum-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
+.aum-empty-state {
+  padding: 60px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.aum-empty-icon-box {
+  width: 70px;
+  height: 70px;
+  border-radius: 20px;
+  background-color: var(--color-surface-container);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.aum-empty-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.aum-empty-desc {
+  font-size: 14px;
+  color: var(--color-text-variant);
+  max-width: 420px;
+  margin: 8px auto 20px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Pagination Bar
+   ========================================================================== */
+.aum-pagination {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 640px) {
+  .aum-pagination {
+    flex-direction: row;
+  }
+}
+
+.aum-pagination-info {
+  font-size: 13px;
+  color: var(--color-text-variant);
+}
+
+.aum-pagination-info strong {
+  color: var(--color-text-main);
+}
+
+.aum-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aum-page-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aum-page-btn:hover:not(:disabled) {
+  background-color: var(--color-surface-low);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.aum-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.aum-page-btn.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(77, 65, 223, 0.3);
+}
+
+.aum-page-ellipsis {
+  width: 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   Security Audit Notice Banner
+   ========================================================================== */
+.aum-security-banner {
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-low);
+  border: 1px solid rgba(77, 65, 223, 0.12);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.aum-security-icon {
+  color: var(--color-primary);
+  font-size: 22px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.aum-security-text {
+  font-size: 12px;
+  color: var(--color-text-variant);
+  line-height: 1.6;
+}
+
+.aum-security-text strong {
+  color: var(--color-text-main);
+}
+
+/* ==========================================================================
+   Shared Footer
+   ========================================================================== */
+.aum-footer {
+  background-color: var(--color-surface-container);
+  border-top: 1px solid var(--color-border);
+  padding: 36px 24px;
+}
+
+.aum-footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 900px) {
+  .aum-footer-inner {
+    flex-direction: row;
+  }
+}
+
+.aum-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aum-footer-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.aum-footer-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.3px;
+}
+
+.aum-footer-copy {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.aum-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.aum-footer-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-variant);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.aum-footer-link:hover {
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   Modals & Overlays
+   ========================================================================== */
+.aum-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: rgba(44, 46, 77, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: aum-fade-in 0.2s ease;
+}
+
+.aum-modal-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-xl);
+  max-width: 560px;
+  width: 100%;
+  padding: 28px;
+  box-shadow: var(--shadow-modal);
+  border: 1px solid var(--color-border);
+  animation: aum-scale-up 0.2s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.aum-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aum-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aum-modal-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.aum-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.aum-modal-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.aum-modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.aum-modal-close-btn:hover {
+  background-color: var(--color-surface-low);
+  color: var(--color-text-main);
+}
+
+/* Modal Form Controls */
+.aum-form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aum-form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 500px) {
+  .aum-form-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.aum-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aum-form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.aum-form-required {
+  color: var(--color-error);
+}
+
+.aum-form-input,
+.aum-form-select,
+.aum-form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  font-family: var(--font-family);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.aum-form-input:focus,
+.aum-form-select:focus,
+.aum-form-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(77, 65, 223, 0.12);
+}
+
+.aum-form-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.aum-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 8px;
+}
+
+/* Modal 2: Confirm Lock */
+.aum-confirm-card {
+  max-width: 440px;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.aum-confirm-icon-box {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 16px;
+}
+
+.aum-confirm-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.aum-confirm-body {
+  font-size: 14px;
+  color: var(--color-text-variant);
+  line-height: 1.6;
+  margin: 12px 0 16px;
+}
+
+.aum-confirm-note {
+  background-color: rgba(255, 218, 214, 0.3);
+  border: 1px solid rgba(186, 26, 26, 0.2);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--color-error);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.aum-confirm-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.aum-confirm-actions button {
+  flex: 1;
+}
+
+/* Toast notification */
+.aum-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: var(--color-text-main);
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 120;
+  animation: aum-slide-up 0.3s ease;
+}
+
+.aum-toast-icon {
+  color: var(--color-success-bg);
+}
+
+@keyframes aum-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes aum-scale-up {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes aum-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 900px) {
+  .aum-sidebar {
+    position: fixed;
+    top: 54px;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .aum-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .aum-main {
+    padding: 16px;
+  }
+}
+
+.aum-mobile-menu-btn {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .aum-mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text-main);
+    cursor: pointer;
+    font-size: 18px;
+  }
+}

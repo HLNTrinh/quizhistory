@@ -25,3 +25,10 @@ MongoDB lưu dữ liệu trong volume `mongo_data`. Chủ đề mẫu và câu h
 - `GET /api/quizzes/:topicId` lấy câu hỏi không kèm đáp án.
 - `POST /api/attempts` nộp bài và lưu kết quả.
 - `GET /api/health` kiểm tra API.
+
+## Cổng quản trị (admin)
+
+- Địa chỉ: `http://localhost:8080/admin/login` khi chạy Docker, hoặc `http://localhost:5173/admin/login` khi chạy `npm run dev --prefix frontend`.
+- Sau khi đăng nhập, bảng điều khiển nằm tại `/admin`; nút "Đăng xuất" xoá phiên và quay lại `/admin/login`.
+- Phiên quản trị lưu riêng ở khoá `quizhistory-admin-session` (localStorage nếu chọn "Ghi nhớ", ngược lại sessionStorage), không ảnh hưởng phiên học viên `quizhistory-token`.
+- Lưu ý: form đăng nhập hiện là bản demo phía client, chưa gọi API xác thực admin. Cần bổ sung role `admin`, endpoint đăng nhập và middleware phân quyền ở backend trước khi triển khai thật.
