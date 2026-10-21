@@ -4,7 +4,7 @@ import User from "../Models/User.js";
 
 const roles = ["student", "teacher", "parent"];
 
-function createToken(user) {
+export function createToken(user) {
   return jwt.sign(
     { sub: user._id.toString(), role: user.role, name: user.name },
     process.env.JWT_SECRET || "local-development-secret",
@@ -12,7 +12,7 @@ function createToken(user) {
   );
 }
 
-function publicUser(user) {
+export function publicUser(user) {
   return { id: user._id, name: user.name, email: user.email, role: user.role };
 }
 

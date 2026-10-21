@@ -12,6 +12,10 @@ export async function api(path, options = {}) {
       ...options.headers
     }
   });
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(`Máy chủ API trả về phản hồi không phải JSON (HTTP ${response.status}). Kiểm tra backend và kết nối cơ sở dữ liệu.`);
+  }
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || "Không thể kết nối đến máy chủ.");
   return data;

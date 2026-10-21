@@ -1,6 +1,8 @@
 import express from "express";
 import { connectDatabase } from "./config/database.js";
+import { ensureCollections } from "./config/collections.js";
 import { seedDatabase } from "./app/Services/seedData.js";
+import { migrateLearningEntities } from "./database/migrations/001-populate-learning-entities.js";
 import api from "./routes/api.js";
 import auth from "./routes/auth.js";
 
@@ -17,5 +19,7 @@ app.use((error, _request, response, _next) => {
 });
 
 await connectDatabase();
+await ensureCollections();
 await seedDatabase();
+console.log("Learning entities migration:", await migrateLearningEntities());
 app.listen(port, "0.0.0.0", () => console.log(`API listening on ${port}`));

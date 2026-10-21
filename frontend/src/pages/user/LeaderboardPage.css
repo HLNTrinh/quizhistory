@@ -1,0 +1,119 @@
+.leaderboard-shell { min-height: 100vh; }
+.leaderboard-page { width: min(1100px, 92vw); margin: 0 auto; padding: 28px 0 0; }
+.leaderboard-hero { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin: 14px 0 27px; padding: 29px 32px; border: 1px solid #e7e5ff; border-radius: 18px; background: linear-gradient(112deg, #f4f3ff 0%, #fbfaff 60%, #fff 100%); }
+.leaderboard-kicker, .leaderboard-cta > div > span { display: inline-flex; align-items: center; gap: 6px; color: #6657df; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.leaderboard-hero h1 { margin: 11px 0 8px; color: #262344; font-size: 30px; line-height: 1.2; }
+.leaderboard-hero p { max-width: 590px; margin: 0; color: #77778b; font-size: 13px; line-height: 1.7; }
+.leaderboard-position { display: flex; min-width: 245px; align-items: center; gap: 12px; padding: 15px; border: 1px solid #e9e5ff; border-radius: 13px; background: #fff; box-shadow: 0 7px 20px #4438a30c; }
+.position-icon { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #f0edff; color: #6355d9; }
+.leaderboard-position > span:last-child { display: grid; gap: 3px; }
+.leaderboard-position small { color: #89889b; font-size: 9px; font-weight: 800; letter-spacing: .06em; }
+.leaderboard-position strong { color: #322b77; font-size: 17px; }
+.leaderboard-position em { color: #858498; font-size: 10px; font-style: normal; }
+.leaderboard-podium-section { margin-bottom: 23px; }
+.leaderboard-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.leaderboard-section-heading > span { display: inline-flex; align-items: center; gap: 8px; color: #32304b; font-size: 15px; font-weight: 800; }
+.leaderboard-section-heading > span svg { color: #6b5ce7; }
+.leaderboard-section-heading > small { color: #89889a; font-size: 10px; }
+.leaderboard-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; }
+.podium-card { position: relative; display: flex; min-height: 210px; flex-direction: column; align-items: center; padding: 17px 12px 14px; overflow: hidden; border: 1px solid #e9e8f1; border-radius: 14px; background: #fff; box-shadow: 0 5px 18px #29234508; }
+.podium-rank-1 { min-height: 232px; border-color: #e7d18b; background: linear-gradient(180deg, #fffaf0 0%, #fff 80%); }
+.podium-rank-2 { border-top: 3px solid #b6bdc9; }
+.podium-rank-3 { border-top: 3px solid #d39a74; }
+.podium-rank-1 { border-top: 3px solid #e6bd4e; }
+.podium-rank-label { display: inline-flex; align-items: center; gap: 4px; color: #777389; font-size: 9px; font-weight: 700; }
+.podium-rank-1 .podium-rank-label { color: #a67a17; }
+.podium-avatar { position: relative; display: grid; width: 47px; height: 47px; place-items: center; margin: 11px 0 7px; border: 2px solid #ddd9f7; border-radius: 50%; background: #f0edff; color: #5d50c4; font-size: 14px; font-weight: 800; }
+.podium-avatar-1 { width: 54px; height: 54px; border-color: #edcc6f; background: #fff1c6; color: #936d11; }
+.podium-avatar-2 { border-color: #c6cbd5; background: #f0f1f4; color: #657081; }
+.podium-avatar-3 { border-color: #dfb397; background: #fff1e8; color: #a5623d; }
+.podium-avatar i { position: absolute; right: -5px; bottom: -4px; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: #e7bd4a; color: #fff; font-size: 9px; font-style: normal; }
+.podium-name { max-width: 100%; overflow: hidden; color: #302e45; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.podium-school { margin-top: 3px; color: #9291a0; font-size: 9px; }
+.podium-score { margin-top: 10px; color: #4d42b8; font-size: 17px; font-weight: 800; }
+.podium-score small { font-size: 10px; font-weight: 600; }
+.podium-stats { margin-top: 4px; color: #848293; font-size: 9px; }
+.podium-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 5px 8px; border-radius: 99px; background: #f1efff; color: #6458c1; font-size: 9px; font-weight: 700; }
+.podium-rank-1 .podium-badge { background: #fff3d2; color: #9b751b; }
+.leaderboard-podium-empty { display: flex; min-height: 110px; align-items: center; justify-content: center; gap: 9px; border: 1px dashed #dcd9ed; border-radius: 13px; background: #fbfaff; color: #858398; font-size: 12px; }
+.leaderboard-podium-empty svg { color: #877be0; }
+.leaderboard-table-card { overflow: hidden; border: 1px solid #e9e8f0; border-radius: 15px; background: #fff; box-shadow: 0 7px 25px #24203c08; }
+.leaderboard-table-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; }
+.leaderboard-table-heading h2 { margin: 0; color: #302e45; font-size: 15px; }
+.leaderboard-table-heading p { margin: 5px 0 0; color: #888798; font-size: 10px; }
+.leaderboard-table-heading p strong { color: #6055c2; }
+.leaderboard-search { display: flex; width: min(255px, 40%); height: 35px; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid #e8e7ef; border-radius: 8px; color: #8b899b; }
+.leaderboard-search:focus-within { border-color: #8c82e8; box-shadow: 0 0 0 3px #7568d51a; }
+.leaderboard-search input { width: 100%; min-width: 0; border: 0; outline: none; color: #36344a; font: inherit; font-size: 10px; }
+.leaderboard-search kbd { padding: 1px 5px; border: 1px solid #e8e7ef; border-radius: 4px; color: #a09eae; font-size: 9px; }
+.leaderboard-table-wrap { position: relative; overflow-x: auto; }
+.leaderboard-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+.leaderboard-table thead { background: #f8f7fc; }
+.leaderboard-table th { height: 39px; padding: 0 13px; color: #777589; font-size: 9px; font-weight: 700; }
+.leaderboard-table th:first-child, .leaderboard-table td:first-child { padding-left: 20px; }
+.leaderboard-table td { height: 55px; padding: 7px 13px; border-top: 1px solid #f0eff4; color: #666579; font-size: 10px; }
+.rank-number { color: #79788a; font-weight: 800; }
+.rank-number-1 { color: #b38820; }
+.rank-number-2 { color: #6c7789; }
+.rank-number-3 { color: #a36743; }
+.leaderboard-person { display: inline-flex; align-items: center; gap: 9px; }
+.leaderboard-person > span:last-child { display: grid; gap: 3px; }
+.leaderboard-person strong { color: #38364b; font-size: 10px; font-weight: 700; }
+.leaderboard-person small { color: #7569cf; font-size: 9px; }
+.leaderboard-avatar { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #f0edff; color: #6559c8; font-size: 10px; font-weight: 800; }
+.avatar-tone-1 { background: #fff3d5; color: #a37a1a; }
+.avatar-tone-2 { background: #edf0f4; color: #667286; }
+.avatar-tone-3 { background: #fff0e6; color: #a86742; }
+.avatar-tone-4 { background: #e9f6f2; color: #34846a; }
+.leaderboard-own-row { background: #f8f7ff; }
+.leaderboard-own-row td { border-top-color: #eae7ff; }
+.leaderboard-own-detached td { border-top: 1px dashed #dcd7fa; }
+.leaderboard-school-cell { color: #858496 !important; }
+.leaderboard-score-cell { color: #5045b5 !important; font-weight: 800; }
+.leaderboard-no-results { height: 100px !important; color: #8a8998 !important; text-align: center; }
+.leaderboard-no-results svg { margin-right: 6px; vertical-align: middle; }
+.leaderboard-loading { position: absolute; inset: 39px 0 0; display: grid; place-items: center; background: #ffffffc9; color: #6760a0; font-size: 11px; }
+.leaderboard-table-footer { display: flex; min-height: 51px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 20px; border-top: 1px solid #f0eff4; }
+.leaderboard-table-footer > span { display: inline-flex; align-items: center; gap: 5px; color: #888798; font-size: 9px; }
+.leaderboard-table-footer > span svg { color: #54a080; }
+.leaderboard-pagination { display: flex; align-items: center; gap: 5px; }
+.leaderboard-pagination > span { margin-right: 5px; color: #818092; font-size: 9px; }
+.leaderboard-pagination button { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid #e8e7ef; border-radius: 6px; background: white; color: #666477; cursor: pointer; }
+.leaderboard-pagination button:disabled { opacity: .45; cursor: default; }
+.leaderboard-pagination .pagination-current { border-color: #6b5ed2; background: #6b5ed2; color: white; font-size: 10px; }
+.leaderboard-cta { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 20px 0; padding: 18px 21px; border: 1px solid #e9e5ff; border-radius: 13px; background: linear-gradient(100deg, #f5f3ff, #fff); }
+.leaderboard-cta h2 { margin: 5px 0 4px; color: #302d56; font-size: 15px; }
+.leaderboard-cta p { margin: 0; color: #818092; font-size: 10px; }
+.leaderboard-cta button { display: inline-flex; min-height: 36px; flex: 0 0 auto; align-items: center; gap: 7px; padding: 0 13px; border: 0; border-radius: 8px; background: #5146c7; color: #fff; font-size: 10px; font-weight: 700; cursor: pointer; }
+.leaderboard-cta button:hover { background: #4035b4; }
+.leaderboard-page .study-footer { margin-right: calc((min(1100px, 92vw) - 100vw) / 2); margin-left: calc((min(1100px, 92vw) - 100vw) / 2); }
+
+@media (max-width: 760px) {
+  .leaderboard-page { padding-top: 14px; }
+  .leaderboard-hero { align-items: stretch; flex-direction: column; gap: 16px; margin-top: 8px; padding: 20px; }
+  .leaderboard-hero h1 { font-size: 24px; }
+  .leaderboard-position { min-width: 0; }
+  .leaderboard-podium { gap: 8px; }
+  .podium-card { min-height: 194px; padding: 12px 6px; }
+  .podium-rank-1 { min-height: 211px; }
+  .podium-rank-label { font-size: 8px; }
+  .podium-stats { text-align: center; }
+  .leaderboard-table-heading { align-items: stretch; flex-direction: column; }
+  .leaderboard-search { width: auto; }
+  .leaderboard-table { min-width: 760px; }
+  .leaderboard-cta { align-items: flex-start; flex-direction: column; }
+  .leaderboard-page .study-footer { margin-right: -4.35vw; margin-left: -4.35vw; }
+}
+
+@media (max-width: 420px) {
+  .leaderboard-page { width: 94vw; }
+  .leaderboard-hero { padding: 16px; }
+  .leaderboard-hero h1 { font-size: 21px; }
+  .leaderboard-hero p { font-size: 11px; }
+  .leaderboard-section-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .podium-card { min-height: 182px; }
+  .podium-rank-1 { min-height: 199px; }
+  .podium-badge { font-size: 8px; }
+  .leaderboard-table-footer { align-items: flex-start; flex-direction: column; }
+  .leaderboard-page .study-footer { margin-right: -3.2vw; margin-left: -3.2vw; }
+}

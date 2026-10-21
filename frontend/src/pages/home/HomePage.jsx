@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  ArrowDown, ArrowRight, BookOpen, CheckCircle2, ChevronRight,
+  ArrowDown, ArrowRight, BookOpen, CheckCircle2, ChevronLeft, ChevronRight,
   Compass, History, LockKeyhole, Medal, ShieldCheck, Target, TrendingUp
 } from "lucide-react";
 import BrandMark from "../../components/BrandMark.jsx";
@@ -38,10 +38,42 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
   const [topics, setTopics] = useState([]);
   const [picked, setPicked] = useState(null);
   const [topicsLoaded, setTopicsLoaded] = useState(false);
+  const topicsTrackRef = useRef(null);
+  const [topicScroll, setTopicScroll] = useState({ canScrollLeft: false, canScrollRight: false });
 
   useEffect(() => {
     api("/topics").then(setTopics).catch(() => setTopics([])).finally(() => setTopicsLoaded(true));
   }, []);
+
+  useEffect(() => {
+    const track = topicsTrackRef.current;
+    if (!track) return undefined;
+
+    const updateScrollState = () => {
+      const maxScrollLeft = track.scrollWidth - track.clientWidth;
+      setTopicScroll({
+        canScrollLeft: track.scrollLeft > 1,
+        canScrollRight: track.scrollLeft < maxScrollLeft - 1
+      });
+    };
+
+    updateScrollState();
+    track.addEventListener("scroll", updateScrollState, { passive: true });
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(track);
+    return () => {
+      track.removeEventListener("scroll", updateScrollState);
+      resizeObserver.disconnect();
+    };
+  }, [topics.length]);
+
+  function scrollTopics(direction) {
+    const track = topicsTrackRef.current;
+    const firstTopic = track?.querySelector(".lp-topic");
+    if (!track || !firstTopic) return;
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+    track.scrollBy({ left: direction * (firstTopic.getBoundingClientRect().width + gap), behavior: "smooth" });
+  }
 
   const questionCount = topics.reduce((total, topic) => total + (topic.questionCount || 0), 0);
   const optionClass = (index) => {
@@ -67,7 +99,7 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
           <div className="grid">
             <div className="lp-hero-copy" id="kham-pha">
               <span className="lp-eyebrow">TỪ NHỮNG DẤU MỐC, HIỂU MỘT DÒNG LỊCH SỬ</span>
-              <h1>Chinh phục Sử Việt,<br /><em>vững bước cùng tri thức.</em></h1>
+              <h1>Chinh phục Sử Việt</h1>
               <p>Biến những mốc thời gian thành hành trình khám phá: ôn theo chuyên đề, thử sức với câu hỏi và hiểu bối cảnh phía sau mỗi sự kiện.</p>
               <div className="cta"><button className="lp-btn amber" onClick={onStartFree}>Bắt đầu ôn tập <ArrowRight size={17} /></button><a className="lp-btn ghost" href="#thu-suc">Thử một câu hỏi <ArrowDown size={15} /></a></div>
               <div className="lp-note"><ShieldCheck size={14} /> Câu hỏi mẫu có thể thử ngay, không cần đăng nhập</div>
@@ -111,13 +143,22 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
 
       <section className="lp-topics-section" id="chuyen-de">
         <div className="lp-wrap">
-          <div className="lp-why"><div><span className="lp-eyebrow">BẢN ĐỒ KIẾN THỨC</span><h2>Những chặng đường đang chờ khám phá.</h2></div><button className="lp-text-link" onClick={onStartFree}>Vào không gian học tập <ArrowRight size={15} /></button></div>
-          {topics.length ? <div className="lp-topic-grid">{topics.map((topic, index) => <button className={`lp-topic lp-topic-${index % 4}`} key={topic._id} onClick={onStartFree}><span className="lp-topic-top"><span>0{index + 1}</span><ArrowRight size={16} /></span><small>{topic.period}</small><strong>{topic.title}</strong><p>{topic.summary}</p><span className="lp-topic-bottom"><span><BookOpen size={14} /> {topic.questionCount} câu hỏi</span><span>Ôn tập <ChevronRight size={14} /></span></span></button>)}</div> : <div className="lp-topics-empty">{topicsLoaded ? "Các chuyên đề đang được cập nhật." : "Đang tải chuyên đề..."}</div>}
+          <div className="lp-why">
+            <div><span className="lp-eyebrow">BẢN ĐỒ KIẾN THỨC</span><h2>Những chặng đường đang chờ khám phá.</h2></div>
+            <div className="lp-topic-actions">
+              <div className="lp-topic-controls" aria-label="Điều hướng chuyên đề">
+                <button type="button" aria-label="Chuyên đề trước" aria-controls="lp-topic-track" disabled={!topicScroll.canScrollLeft} onClick={() => scrollTopics(-1)}><ChevronLeft size={18} /></button>
+                <button type="button" aria-label="Chuyên đề tiếp theo" aria-controls="lp-topic-track" disabled={!topicScroll.canScrollRight} onClick={() => scrollTopics(1)}><ChevronRight size={18} /></button>
+              </div>
+              <button className="lp-text-link" onClick={onStartFree}>Vào không gian học tập <ArrowRight size={15} /></button>
+            </div>
+          </div>
+          {topics.length ? <div className="lp-topic-grid" id="lp-topic-track" ref={topicsTrackRef}>{topics.map((topic, index) => <button className={`lp-topic lp-topic-${index % 4}`} key={topic._id} onClick={onStartFree}><span className="lp-topic-top"><span>0{index + 1}</span><ArrowRight size={16} /></span><small>{topic.period}</small><strong>{topic.title}</strong><p>{topic.summary}</p><span className="lp-topic-bottom"><span><BookOpen size={14} /> {topic.questionCount} câu hỏi</span><span>Ôn tập <ChevronRight size={14} /></span></span></button>)}</div> : <div className="lp-topics-empty">{topicsLoaded ? "Các chuyên đề đang được cập nhật." : "Đang tải chuyên đề..."}</div>}
         </div>
       </section>
 
       <section className="lp-steps-section" id="lo-trinh">
-        <div className="lp-wrap lp-center"><span className="lp-eyebrow">BẮT ĐẦU THẬT ĐƠN GIẢN</span><h2 className="lp-h2">Ba bước để vào guồng ôn tập</h2><p className="lp-lead">Đi từ chuyên đề, qua từng câu hỏi, rồi xem lại điều vừa học.</p><div className="lp-steps">{steps.map((step) => <article className="lp-step" key={step.number}><div className="top"><span>{step.number}</span><ArrowRight size={16} /></div><h3>{step.title}</h3><p>{step.text}</p></article>)}</div></div>
+        <div className="lp-wrap lp-center"><span className="lp-eyebrow">BẮT ĐẦU THẬT ĐƠN GIẢN</span><h2 className="lp-h2">Ba bước để ôn tập</h2><p className="lp-lead">Đi từ chuyên đề, qua từng câu hỏi, rồi xem lại điều vừa học.</p><div className="lp-steps">{steps.map((step) => <article className="lp-step" key={step.number}><div className="top"><span>{step.number}</span><ArrowRight size={16} /></div><h3>{step.title}</h3><p>{step.text}</p></article>)}</div></div>
       </section>
 
       <section className="lp-wrap"><div className="lp-final"><span className="lp-pill">HÀNH TRÌNH LỊCH SỬ CỦA RIÊNG EM</span><h2>Sẵn sàng bắt đầu ôn tập?</h2><p>Tạo tài khoản để lưu bài làm, kết quả và tiếp tục từ nơi em đã dừng lại.</p><div className="lp-final-actions"><button className="lp-btn amber" onClick={onSignup}>Tạo tài khoản <ArrowRight size={16} /></button><button className="lp-btn final-ghost" onClick={onLogin}>Đã có tài khoản? Đăng nhập</button></div></div></section>

@@ -14,10 +14,12 @@ export default function QuestionPage({ quiz, user, onBack, onAttemptComplete }) 
     setBusy(true);
     setError("");
     try {
-      const review = await api("/attempts", {
+      const isQuestionSetQuiz = Boolean(quiz.questionSet?._id);
+      const review = await api(isQuestionSetQuiz ? "/question-set-attempts" : "/attempts", {
         method: "POST",
         body: JSON.stringify({
           topicId: quiz.topic._id,
+          ...(isQuestionSetQuiz ? { questionSetId: quiz.questionSet._id } : {}),
           studentName: user.name,
           answers: quiz.questions.map((item) => ({
             questionId: item._id,
@@ -35,7 +37,7 @@ export default function QuestionPage({ quiz, user, onBack, onAttemptComplete }) 
   }
 
   return <section className="study-content">
-    <button className="study-back" onClick={onBack}><ArrowLeft size={16} /> Các chủ đề</button>
+    <button className="study-back" onClick={onBack}><ArrowLeft size={16} />{quiz.questionSet ? " Quay lại gói câu hỏi" : " Các chủ đề"}</button>
     {error && <div className="study-error" role="alert">{error}<button onClick={() => setError("")}>Đóng</button></div>}
     {!result ? <>
       <div className="study-title"><span>{quiz.topic.period}</span><h1>{quiz.topic.title}</h1><p>{quiz.topic.summary}</p></div>
