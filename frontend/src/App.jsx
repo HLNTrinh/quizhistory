@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import BrandMark from "./components/BrandMark.jsx";
-import { api, readToken } from "./lib/api.js";
+import { api, adminApi, clearAdminToken, readAdminToken, readToken } from "./lib/api.js";
 import HomePage from "./pages/home/HomePage.jsx";
 import LeaderboardPage from "./pages/user/LeaderboardPage.jsx";
 import LoginPage from "./pages/user/LoginPage.jsx";
 import PackagesPage from "./pages/user/PackagesPage.jsx";
 import ProfilePage from "./pages/user/ProfilePage.jsx";
 import StudyHomePage from "./pages/user/StudyHomePage.jsx";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
+import AdminLoginPage from "./pages/admin/AdminLoginPage.jsx";
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [pathname, setPathname] = useState(window.location.pathname);
+  const [adminUser, setAdminUser] = useState(null);
+  const [checkingAdminSession, setCheckingAdminSession] = useState(() => Boolean(readAdminToken()));
 
   useEffect(() => {
     const syncPathname = () => setPathname(window.location.pathname);
@@ -39,6 +43,30 @@ export default function App() {
       .finally(() => setCheckingSession(false));
   }, []);
 
+  useEffect(() => {
+    if (!readAdminToken()) {
+      setCheckingAdminSession(false);
+      return;
+    }
+    adminApi("/admin/auth/me")
+      .then(({ user: currentAdmin }) => setAdminUser(currentAdmin))
+      .catch(() => clearAdminToken())
+      .finally(() => setCheckingAdminSession(false));
+  }, []);
+
+  const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  useEffect(() => {
+    if (!isAdminPath) return;
+    if (adminUser && pathname === "/admin/login") navigate("/admin");
+  }, [pathname, adminUser, isAdminPath]);
+
+  function adminLogout() {
+    clearAdminToken();
+    setAdminUser(null);
+    navigate("/admin/login");
+  }
+
   function logout() {
     localStorage.removeItem("quizhistory-token");
     sessionStorage.removeItem("quizhistory-token");
@@ -46,6 +74,18 @@ export default function App() {
     navigate("/");
   }
 
+  if (isAdminPath) {
+    if (checkingAdminSession) {
+      return <div className="session-loading"><BrandMark /> Đang xác thực phiên quản trị...</div>;
+    }
+    if (!adminUser) {
+      return <AdminLoginPage
+        onAuthenticated={(currentAdmin) => { setAdminUser(currentAdmin); navigate("/admin"); }}
+        onExit={() => navigate("/")}
+      />;
+    }
+    return <AdminDashboardPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+  }
   if (checkingSession) return <div className="session-loading"><BrandMark /> Đang xác thực phiên học tập...</div>;
   if (user && (pathname === "/packages" || pathname.startsWith("/packages/"))) {
     const packageId = pathname.startsWith("/packages/") ? pathname.slice("/packages/".length) : null;

@@ -42,7 +42,16 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
   const [topicScroll, setTopicScroll] = useState({ canScrollLeft: false, canScrollRight: false });
 
   useEffect(() => {
-    api("/topics").then(setTopics).catch(() => setTopics([])).finally(() => setTopicsLoaded(true));
+    api("/packages")
+      .then((items) => setTopics(items.map((item) => ({
+        _id: item._id,
+        title: item.name,
+        summary: item.description,
+        period: item.category,
+        questionCount: item.questionCount || 0
+      }))))
+      .catch(() => setTopics([]))
+      .finally(() => setTopicsLoaded(true));
   }, []);
 
   useEffect(() => {

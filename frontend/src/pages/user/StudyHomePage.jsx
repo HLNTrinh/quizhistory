@@ -197,7 +197,7 @@ export default function StudyHomePage({ user, onLogout, onNavigate }) {
             const percent = attempt.totalQuestions ? Math.round((attempt.score / attempt.totalQuestions) * 100) : 0;
             return <div className="activity-row" key={attempt._id}>
               <span className={`activity-icon activity-icon-${index % 3}`}>{index === 0 ? <Check size={14} /> : <Trophy size={13} />}</span>
-              <span className="activity-copy"><strong>{attempt.questionSetId?.name || attempt.topic?.title || "Bộ câu hỏi lịch sử"}</strong><small>{attempt.score}/{attempt.totalQuestions} câu ({percent}%)</small></span>
+              <span className="activity-copy"><strong>{attempt.questionSetId?.name || "Bộ câu hỏi lịch sử"}</strong><small>{attempt.score}/{attempt.totalQuestions} câu ({percent}%)</small></span>
               <time>{formatDate(attempt.createdAt)}</time>
             </div>;
           })}</div> : <div className="activity-empty"><span className="activity-icon"><Sparkles size={14} /></span><span><strong>Chưa có hoạt động gần đây</strong><small>Hoàn thành một bộ câu hỏi để xem kết quả ở đây.</small></span></div>}

@@ -152,7 +152,7 @@ export default function ProfilePage({ user, onUpdateUser, onLogout, onNavigate }
               <input id="profile-email" type="email" value={profile.user.email} readOnly />
               <small className="field-note">Email được dùng để đăng nhập và hiện chưa thể thay đổi.</small>
               <label>Vai trò</label>
-              <div className="profile-readonly-field">{profile.user.role === "student" ? "Học viên" : profile.user.role === "teacher" ? "Giáo viên" : "Phụ huynh"}</div>
+              <div className="profile-readonly-field">{profile.user.role === "admin" ? "Quản trị viên" : "Học viên"}</div>
               {profileError && <p className="form-feedback form-error" role="alert">{profileError}</p>}
               {profileMessage && <p className="form-feedback form-success" role="status">{profileMessage}</p>}
               <button className="profile-save-button" type="submit" disabled={savingProfile || name.trim() === profile.user.name}>{savingProfile ? "Đang lưu..." : <><Check size={14} /> Lưu thay đổi</>}</button>

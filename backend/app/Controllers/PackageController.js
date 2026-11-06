@@ -2,7 +2,8 @@ import Attempt from "../Models/Attempt.js";
 import Package from "../Models/Package.js";
 import Question from "../Models/Question.js";
 import QuestionSet from "../Models/QuestionSet.js";
-import Topic from "../Models/Topic.js";
+
+const DEFAULT_CATEGORY = "Lịch sử Việt Nam";
 
 async function getQuestionCounts(questionSets) {
   if (!questionSets.length) return new Map();
@@ -14,9 +15,9 @@ async function getQuestionCounts(questionSets) {
 }
 
 async function getCompletedSetIds(userId, questionSets) {
-  if (!questionSets.length) return new Set();
+  if (!userId || !questionSets.length) return new Set();
   const attempts = await Attempt.find({
-    $or: [{ user: userId }, { userId }],
+    userId,
     status: "completed",
     questionSetId: { $in: questionSets.map(({ _id }) => _id) }
   }).select("questionSetId").lean();
@@ -34,7 +35,7 @@ export async function listPackages(request, response) {
     .lean();
   const [questionCounts, completedSetIds] = await Promise.all([
     getQuestionCounts(questionSets),
-    getCompletedSetIds(request.user.sub, questionSets)
+    getCompletedSetIds(request.user?.sub, questionSets)
   ]);
   const setsByPackage = new Map();
 
@@ -53,7 +54,7 @@ export async function listPackages(request, response) {
     const questionSetsForPackage = setsByPackage.get(learningPackage._id.toString()) || [];
     return {
       ...learningPackage,
-      category: learningPackage.categoryId?.name || "Lịch sử Việt Nam",
+      category: learningPackage.categoryId?.name || DEFAULT_CATEGORY,
       questionSets: questionSetsForPackage,
       questionSetCount: questionSetsForPackage.length,
       questionCount: questionSetsForPackage.reduce((total, questionSet) => total + questionSet.questionCount, 0)
@@ -72,7 +73,7 @@ export async function getPackageDetails(request, response) {
     .lean();
   const [questionCounts, completedSetIds] = await Promise.all([
     getQuestionCounts(questionSets),
-    getCompletedSetIds(request.user.sub, questionSets)
+    getCompletedSetIds(request.user?.sub, questionSets)
   ]);
   const nextSetIndex = questionSets.findIndex((questionSet) => !completedSetIds.has(questionSet._id.toString()));
   const sets = questionSets.map((questionSet, index) => ({
@@ -84,7 +85,7 @@ export async function getPackageDetails(request, response) {
 
   response.json({
     ...learningPackage,
-    category: learningPackage.categoryId?.name || "Lịch sử Việt Nam",
+    category: learningPackage.categoryId?.name || DEFAULT_CATEGORY,
     questionSets: sets,
     questionSetCount: sets.length,
     questionCount: sets.reduce((total, questionSet) => total + questionSet.questionCount, 0)
@@ -113,19 +114,29 @@ export async function getQuestionSetQuiz(request, response) {
   }
 
   const questions = await Question.find({ questionSetId: questionSet._id })
-    .select("prompt options order explanation")
-    .sort({ order: 1, _id: 1 })
+    .select("content prompt options sequenceOrder order explanation score")
+    .sort({ sequenceOrder: 1, order: 1, _id: 1 })
     .lean();
 
   response.json({
-    topic: {
+    lesson: {
       _id: learningPackage._id,
       title: questionSet.name,
-      period: learningPackage.categoryId?.name || "Lịch sử Việt Nam",
+      period: learningPackage.categoryId?.name || DEFAULT_CATEGORY,
       summary: questionSet.description || learningPackage.description
     },
-    questionSet: { _id: questionSet._id, name: questionSet.name },
-    questions
+    questionSet: {
+      _id: questionSet._id,
+      name: questionSet.name,
+      score: questionSet.score,
+      timeLimit: questionSet.timeLimit
+    },
+    questions: questions.map((question) => ({
+      _id: question._id,
+      prompt: question.prompt || question.content,
+      options: question.options,
+      explanation: question.explanation
+    }))
   });
 }
 
@@ -153,15 +164,17 @@ export async function submitQuestionSetAttempt(request, response) {
     }
   }
 
-  const questions = await Question.find({ questionSetId: questionSet._id }).sort({ order: 1, _id: 1 }).lean();
+  const questions = await Question.find({ questionSetId: questionSet._id })
+    .sort({ sequenceOrder: 1, order: 1, _id: 1 })
+    .lean();
   const submitted = new Map(answers.map((answer) => [String(answer.questionId), answer.selectedIndex]));
   if (!questions.length || submitted.size !== questions.length || questions.some((question) => !submitted.has(String(question._id)))) {
     return response.status(400).json({ message: "Bài làm chưa có đủ câu trả lời hợp lệ." });
   }
 
   for (const question of questions) {
-    const selectedIndex = submitted.get(String(question._id));
-    if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= question.options.length) {
+    const chosenIndex = submitted.get(String(question._id));
+    if (!Number.isInteger(chosenIndex) || chosenIndex < 0 || chosenIndex >= question.options.length) {
       return response.status(400).json({ message: "Đáp án gửi lên không hợp lệ." });
     }
   }
@@ -169,26 +182,31 @@ export async function submitQuestionSetAttempt(request, response) {
   const score = questions.reduce((total, question) => (
     total + Number(submitted.get(String(question._id)) === question.answerIndex)
   ), 0);
-  const topic = await Topic.findById(learningPackage._id).select("_id").lean();
   const attempt = await Attempt.create({
-    user: request.user.sub,
+    userId: request.user.sub,
     studentName: request.user.name,
-    ...(topic ? { topic: topic._id } : {}),
     questionSetId: questionSet._id,
     answers: questions.map((question) => ({
       question: question._id,
       selectedIndex: submitted.get(String(question._id))
     })),
     score,
-    totalQuestions: questions.length
+    totalQuestions: questions.length,
+    timeSpent: Math.max(0, Number(request.body.timeSpent) || 0),
+    status: "completed",
+    completedAt: new Date()
   });
 
   response.status(201).json({
     attemptId: attempt._id,
-    score,
-    totalQuestions: questions.length,
+    score: attempt.score,
+    correctAnswers: attempt.correctAnswers,
+    wrongAnswers: attempt.wrongAnswers,
+    totalQuestions: attempt.totalQuestions,
+    accuracy: attempt.accuracy,
+    completedAt: attempt.completedAt,
     review: questions.map((question) => ({
-      prompt: question.prompt,
+      prompt: question.prompt || question.content,
       options: question.options,
       selectedIndex: submitted.get(String(question._id)),
       answerIndex: question.answerIndex,

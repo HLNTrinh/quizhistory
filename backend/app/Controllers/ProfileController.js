@@ -2,7 +2,6 @@ import bcrypt from "bcryptjs";
 import Attempt from "../Models/Attempt.js";
 import Package from "../Models/Package.js";
 import QuestionSet from "../Models/QuestionSet.js";
-import Topic from "../Models/Topic.js";
 import User from "../Models/User.js";
 import { createToken, publicUser } from "./AuthController.js";
 
@@ -12,17 +11,15 @@ function isCompleted(attempt) {
 
 export async function getProfile(request, response) {
   const userId = request.user.sub;
-  const [user, attempts, packages, questionSets, topics] = await Promise.all([
+  const [user, attempts, packages, questionSets] = await Promise.all([
     User.findById(userId).lean(),
-    Attempt.find({ $or: [{ user: userId }, { userId }] }).sort({ createdAt: -1 }).lean(),
+    Attempt.find({ userId }).sort({ createdAt: -1 }).lean(),
     Package.find({ status: "active" }).populate("categoryId", "name").sort({ createdAt: -1 }).lean(),
-    QuestionSet.find({ status: "active" }).sort({ order: 1, _id: 1 }).lean(),
-    Topic.find().select("title period").lean()
+    QuestionSet.find({ status: "active" }).sort({ order: 1, _id: 1 }).lean()
   ]);
 
   if (!user) return response.status(404).json({ message: "Không tìm thấy tài khoản." });
 
-  const topicById = new Map(topics.map((topic) => [topic._id.toString(), topic]));
   const questionSetById = new Map(questionSets.map((questionSet) => [questionSet._id.toString(), questionSet]));
   const packageById = new Map(packages.map((learningPackage) => [learningPackage._id.toString(), learningPackage]));
   const completedAttempts = attempts.filter(isCompleted);
@@ -46,13 +43,12 @@ export async function getProfile(request, response) {
     };
   }).filter(({ totalSets }) => totalSets > 0);
   const recentAttempts = attempts.slice(0, 8).map((attempt) => {
-    const topic = attempt.topic ? topicById.get(attempt.topic.toString()) : null;
     const questionSet = attempt.questionSetId ? questionSetById.get(attempt.questionSetId.toString()) : null;
     const learningPackage = questionSet ? packageById.get(questionSet.packageId.toString()) : null;
     return {
       id: attempt._id,
-      title: questionSet?.name || topic?.title || "Bài ôn tập lịch sử",
-      period: learningPackage?.categoryId?.name || topic?.period || "Lịch sử Việt Nam",
+      title: questionSet?.name || "Bài ôn tập lịch sử",
+      period: learningPackage?.categoryId?.name || "Lịch sử Việt Nam",
       score: attempt.score,
       totalQuestions: attempt.totalQuestions,
       completedAt: attempt.completedAt || attempt.createdAt,

@@ -2,7 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
 
-const roles = ["student", "teacher", "parent"];
+// Tài khoản quản trị không được tạo qua API đăng ký công khai.
+const roles = ["student"];
 
 export function createToken(user) {
   return jwt.sign(

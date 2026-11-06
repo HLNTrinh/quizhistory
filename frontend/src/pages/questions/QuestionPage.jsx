@@ -14,12 +14,10 @@ export default function QuestionPage({ quiz, user, onBack, onAttemptComplete }) 
     setBusy(true);
     setError("");
     try {
-      const isQuestionSetQuiz = Boolean(quiz.questionSet?._id);
-      const review = await api(isQuestionSetQuiz ? "/question-set-attempts" : "/attempts", {
+      const review = await api("/question-set-attempts", {
         method: "POST",
         body: JSON.stringify({
-          topicId: quiz.topic._id,
-          ...(isQuestionSetQuiz ? { questionSetId: quiz.questionSet._id } : {}),
+          questionSetId: quiz.questionSet._id,
           studentName: user.name,
           answers: quiz.questions.map((item) => ({
             questionId: item._id,
@@ -37,10 +35,10 @@ export default function QuestionPage({ quiz, user, onBack, onAttemptComplete }) 
   }
 
   return <section className="study-content">
-    <button className="study-back" onClick={onBack}><ArrowLeft size={16} />{quiz.questionSet ? " Quay lại gói câu hỏi" : " Các chủ đề"}</button>
+    <button className="study-back" onClick={onBack}><ArrowLeft size={16} /> Quay lại gói câu hỏi</button>
     {error && <div className="study-error" role="alert">{error}<button onClick={() => setError("")}>Đóng</button></div>}
     {!result ? <>
-      <div className="study-title"><span>{quiz.topic.period}</span><h1>{quiz.topic.title}</h1><p>{quiz.topic.summary}</p></div>
+      <div className="study-title"><span>{quiz.lesson.period}</span><h1>{quiz.lesson.title}</h1><p>{quiz.lesson.summary}</p></div>
       <section className="study-quiz">
         <div className="study-question-meta">CÂU {questionIndex + 1} / {quiz.questions.length}<span><Clock3 size={15} /> Tự chọn nhịp độ</span></div>
         <div className="study-progress"><i style={{ width: `${((questionIndex + 1) / quiz.questions.length) * 100}%` }} /></div>
@@ -55,9 +53,9 @@ export default function QuestionPage({ quiz, user, onBack, onAttemptComplete }) 
       <span className="result-trophy"><Trophy size={28} /></span>
       <span className="study-overline">KẾT QUẢ ÔN TẬP</span>
       <h1>{result.score}/{result.totalQuestions} câu đúng</h1>
-      <p>{quiz.topic.title}</p>
+      <p>{quiz.lesson.title}</p>
       <div className="answer-review">{result.review.map((item, index) => <article key={`${item.prompt}-${index}`}><h3><span>{index + 1}.</span> {item.prompt}</h3><p className="correct-answer"><CheckCircle2 size={16} /> {item.options[item.answerIndex]}</p>{item.selectedIndex !== item.answerIndex && <p className="wrong-answer">Em chọn: {item.options[item.selectedIndex]}</p>}<p className="explanation">{item.explanation}</p></article>)}</div>
-      <button className="primary-action" onClick={onBack}>Chọn chủ đề khác <ArrowRight size={16} /></button>
+      <button className="primary-action" onClick={onBack}>Về gói câu hỏi <ArrowRight size={16} /></button>
     </section>}
   </section>;
 }

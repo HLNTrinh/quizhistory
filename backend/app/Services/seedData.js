@@ -1,5 +1,7 @@
+import Category from "../Models/Category.js";
+import Package from "../Models/Package.js";
 import Question from "../Models/Question.js";
-import Topic from "../Models/Topic.js";
+import QuestionSet from "../Models/QuestionSet.js";
 
 const lessons = [
   {
@@ -53,15 +55,57 @@ const lessons = [
 ];
 
 export async function seedDatabase() {
-  if (await Topic.exists({})) return;
+  if (await Package.exists({})) return;
 
   for (const [order, lesson] of lessons.entries()) {
-    const { questions, ...topicData } = lesson;
-    const topic = await Topic.create({ ...topicData, order });
-    await Question.insertMany(questions.map((question, questionOrder) => ({
-      ...question,
-      topic: topic._id,
-      order: questionOrder
-    })));
+    const category = await Category.findOneAndUpdate(
+      { name: lesson.period },
+      {
+        $setOnInsert: {
+          name: lesson.period,
+          description: `Giai đoạn lịch sử: ${lesson.period}`,
+          image: "",
+          status: "active"
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    const learningPackage = await Package.create({
+      categoryId: category._id,
+      name: lesson.title,
+      description: lesson.summary,
+      difficulty: "medium",
+      order,
+      totalScore: lesson.questions.length,
+      estimatedTime: lesson.questions.length * 2,
+      status: "active"
+    });
+
+    for (const [index, question] of lesson.questions.entries()) {
+      const questionSet = await QuestionSet.create({
+        packageId: learningPackage._id,
+        name: `Chặng ${index + 1}: ${lesson.title}`.slice(0, 120),
+        description: lesson.summary.slice(0, 2000),
+        sequenceOrder: index,
+        difficulty: question.difficulty || "medium",
+        score: question.score ?? 1,
+        timeLimit: 0,
+        unlockCondition: index === 0 ? null : { type: "complete_previous_set" },
+        status: "active"
+      });
+
+      await Question.create({
+        questionSetId: questionSet._id,
+        content: question.prompt,
+        options: question.options,
+        correctAnswer: question.answerIndex,
+        answerIndex: question.answerIndex,
+        explanation: question.explanation,
+        difficulty: question.difficulty || "medium",
+        score: question.score ?? 1,
+        sequenceOrder: 0
+      });
+    }
   }
 }

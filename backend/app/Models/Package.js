@@ -6,11 +6,13 @@ const packageSchema = new mongoose.Schema({
   description: { type: String, default: "", trim: true, maxlength: 2000 },
   image: { type: String, default: "", trim: true },
   difficulty: { type: String, default: "medium", trim: true },
+  order: { type: Number, min: 0, default: 0 },
   totalScore: { type: Number, min: 0, default: 0 },
   estimatedTime: { type: Number, min: 0, default: 0 },
-  status: { type: String, enum: ["draft", "active", "inactive"], default: "draft" }
+  status: { type: String, enum: ["draft", "active", "inactive"], default: "active" }
 }, { timestamps: true, collection: "packages" });
 
 packageSchema.index({ status: 1, createdAt: -1 });
+packageSchema.index({ categoryId: 1, order: 1 });
 
 export default mongoose.model("Package", packageSchema);

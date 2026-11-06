@@ -165,7 +165,7 @@ export default function PackagesPage({ user, onLogout, onNavigate, packageId }) 
     </header>
 
     {error && <div className="study-error" role="alert">{error}<button onClick={() => setError("")}>Đóng</button></div>}
-    {quiz ? <QuestionPage key={quiz.questionSet?._id || quiz.topic._id} quiz={quiz} user={user} onBack={() => setQuiz(null)} onAttemptComplete={finishQuestionSet} /> : detailView ? <div className="packages-page package-detail-page" id="package-detail">
+    {quiz ? <QuestionPage key={quiz.questionSet._id} quiz={quiz} user={user} onBack={() => setQuiz(null)} onAttemptComplete={finishQuestionSet} /> : detailView ? <div className="packages-page package-detail-page" id="package-detail">
       {detailLoading ? <div className="packages-loading">Đang tải nội dung gói câu hỏi...</div> : selectedPackage ? <>
         <div className="journey-breadcrumb"><button onClick={() => onNavigate("/packages")}><ArrowLeft size={13} /> Chi tiết gói</button><span>/</span><a href="/packages" onClick={(event) => { event.preventDefault(); onNavigate("/packages"); }}>Khám phá</a><span>/</span><strong>{selectedPackage.name}</strong><span>/</span><b>Bản đồ hành trình</b></div>
         <section className="journey-overview">
