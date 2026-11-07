@@ -9,6 +9,17 @@ import ProfilePage from "./pages/user/ProfilePage.jsx";
 import StudyHomePage from "./pages/user/StudyHomePage.jsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
 import AdminLoginPage from "./pages/admin/AdminLoginPage.jsx";
+import AdminPackagesPage from "./pages/admin/AdminPackagesPage.jsx";
+import AdminSectionPage from "./pages/admin/AdminSectionPage.jsx";
+import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
+
+const adminSectionTitles = {
+  "/admin/question-sets": "Bộ câu hỏi",
+  "/admin/questions": "Ngân hàng câu hỏi",
+  "/admin/leaderboard": "Bảng xếp hạng",
+  "/admin/reports": "Báo cáo",
+  "/admin/settings": "Cài đặt"
+};
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -82,6 +93,22 @@ export default function App() {
       return <AdminLoginPage
         onAuthenticated={(currentAdmin) => { setAdminUser(currentAdmin); navigate("/admin"); }}
         onExit={() => navigate("/")}
+      />;
+    }
+    if (pathname === "/admin/users") {
+      return <AdminUsersPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+    }
+    if (pathname === "/admin/packages") {
+      return <AdminPackagesPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+    }
+    const sectionTitle = adminSectionTitles[pathname];
+    if (pathname !== "/admin" && sectionTitle) {
+      return <AdminSectionPage
+        admin={adminUser}
+        onLogout={adminLogout}
+        onNavigate={navigate}
+        activePath={pathname}
+        title={sectionTitle}
       />;
     }
     return <AdminDashboardPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;

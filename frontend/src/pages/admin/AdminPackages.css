@@ -1,0 +1,179 @@
+/* ============================================================
+   Admin — trang Gói câu hỏi (AdminPackagesPage)
+   Bổ sung thành phần riêng: thẻ số liệu, khối sắp xếp, bảng gói câu hỏi.
+   Dùng lại biến màu khai báo trong .adm-app (AdminConsole.css).
+   Thanh lọc / chân bảng / phân trang dùng chung từ AdminConsole.css.
+   ============================================================ */
+
+.adm-stat-icon.is-violet { background: var(--adm-violet-soft); color: var(--adm-violet); }
+.adm-badge.is-archived { background: var(--adm-purple-soft); color: var(--adm-purple); }
+
+/* ---------------- Thẻ số liệu ---------------- */
+.adm-stat { height: 100%; }
+.adm-stat-footer { align-items: center; }
+.adm-stat-footer > span:last-child { min-width: 0; line-height: 1.45; }
+
+.adm-pkg-stat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  color: var(--adm-body);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adm-pkg-stat-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.adm-pkg-stat-legend i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.adm-pkg-stat-legend .is-open { color: var(--adm-green); }
+.adm-pkg-stat-legend .is-draft { color: var(--adm-amber); }
+.adm-pkg-stat-legend .is-archived { color: var(--adm-purple); }
+
+.adm-pkg-stat-progress { display: flex; flex-direction: column; gap: 6px; }
+.adm-pkg-stat-progress .adm-track { height: 6px; }
+.adm-pkg-stat-progress small { color: var(--adm-muted); font-size: 11px; font-weight: 600; line-height: 1.4; }
+
+/* ---------------- Khối sắp xếp ---------------- */
+.adm-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dcd5ff;
+  border-radius: 11px;
+  background: #f5f2ff;
+  color: var(--adm-violet);
+}
+
+.adm-sort svg { flex: 0 0 auto; }
+
+.adm-sort-label {
+  color: #6b5dd3;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-sort select {
+  height: 100%;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: #4b3fa8;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+}
+
+/* ---------------- Bảng gói câu hỏi ---------------- */
+.adm-table-packages { min-width: 1240px; }
+.adm-table-packages th { padding: 12px; }
+.adm-table-packages td { padding: 14px 12px; }
+.adm-table-packages th:last-child,
+.adm-table-packages td:last-child { text-align: left; }
+
+.adm-pkg-thumb {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+.adm-pkg-thumb.is-violet { background: #efecff; color: #6a5af9; }
+.adm-pkg-thumb.is-green { background: var(--adm-green-soft); color: var(--adm-green-ink); }
+.adm-pkg-thumb.is-amber { background: var(--adm-amber-soft); color: var(--adm-amber-ink); }
+.adm-pkg-thumb.is-purple { background: var(--adm-purple-soft); color: var(--adm-purple); }
+.adm-pkg-thumb.is-blue { background: var(--adm-blue-soft); color: var(--adm-blue-ink); }
+
+.adm-pkg-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adm-pkg-name strong { color: var(--adm-ink); font-size: 12.5px; font-weight: 700; line-height: 1.35; }
+
+.adm-pkg-name small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.adm-pkg-name small svg { flex: 0 0 auto; color: #b7bad2; }
+
+.adm-pkg-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 260px;
+  margin: 0;
+  color: var(--adm-body);
+  font-size: 11.5px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.adm-diff-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-diff-pill.is-violet { border-color: #e6e0ff; background: #f4f1ff; color: #5b46f5; }
+.adm-diff-pill.is-green { border-color: #cdeee0; background: var(--adm-green-soft); color: var(--adm-green-ink); }
+.adm-diff-pill.is-amber { border-color: #f8e6bf; background: #fff6e5; color: var(--adm-amber-ink); }
+
+.adm-pkg-count {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--adm-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-pkg-count small { color: var(--adm-muted); font-size: 10.5px; font-weight: 600; }
+
+.adm-pkg-points { display: flex; flex-direction: column; gap: 3px; }
+
+.adm-pkg-points strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b26a00;
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.adm-pkg-points small { color: var(--adm-muted); font-size: 10.5px; font-weight: 600; }
+
+.adm-pkg-date { color: var(--adm-body); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1240px) {
+  .adm-table-packages { min-width: 1120px; }
+}
+
+@media (max-width: 760px) {
+  .adm-sort { flex: 1 1 100%; justify-content: center; }
+  .adm-sort select { flex: 1; min-width: 0; }
+  .adm-sort-label { display: none; }
+  .adm-filter-actions .adm-primary { flex: 1 1 100%; justify-content: center; }
+  .adm-pkg-desc { max-width: 220px; }
+  .adm-pkg-stat-legend { gap: 5px 10px; font-size: 10.5px; }
+}
+
+@media (max-width: 520px) {
+  .adm-table-packages { min-width: 1040px; }
+  .adm-pkg-desc { max-width: 190px; }
+}

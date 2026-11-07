@@ -1,0 +1,142 @@
+/* ============================================================
+   Admin — trang Người dùng (AdminUsersPage)
+   Bổ sung các thành phần riêng: bộ lọc, bảng thành viên, phân trang, ghi chú bảo mật.
+   Dùng lại biến màu khai báo trong .adm-app (AdminConsole.css).
+   ============================================================ */
+
+.adm-stat-icon.is-red { background: var(--adm-red-soft); color: var(--adm-red); }
+.adm-pill.is-red { background: var(--adm-red-soft); color: var(--adm-red); }
+.adm-pill.is-muted { background: #f1f0f9; color: #6b6f92; }
+
+/* Giữ 4 thẻ số liệu cao bằng nhau và không tràn viền khi chú thích dài */
+.adm-stat-grid { align-items: stretch; }
+.adm-stat { height: 100%; }
+.adm-stat-footer { align-items: center; }
+.adm-stat-footer > span:last-child { min-width: 0; line-height: 1.45; }
+
+/* ---------------- Bộ lọc ---------------- */
+/* Thanh lọc (.adm-filter-bar / .adm-filter-select / .adm-filter-actions / .adm-filter-reset)
+   đã được chuyển sang AdminConsole.css để mọi trang danh sách dùng chung. */
+
+/* ---------------- Bảng thành viên ---------------- */
+.adm-panel-flush { padding: 0; overflow: hidden; }
+.adm-panel-flush .adm-table-wrap { margin: 0; padding: 4px 8px 0; }
+
+.adm-table-users { min-width: 1060px; }
+.adm-table-users th { padding: 12px; }
+.adm-table-users td { padding: 14px 12px; }
+.adm-table-users tbody tr.is-locked { background: #fef7f7; }
+.adm-table-users tbody tr.is-locked:hover { background: #fdeeee; }
+
+.adm-member { display: flex; align-items: center; gap: 11px; min-width: 0; }
+
+.adm-member-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.adm-member-avatar.is-violet { background: #efecff; color: #6a5af9; }
+.adm-member-avatar.is-green { background: var(--adm-green-soft); color: var(--adm-green-ink); }
+.adm-member-avatar.is-purple { background: var(--adm-purple-soft); color: var(--adm-purple); }
+.adm-member-avatar.is-amber { background: var(--adm-amber-soft); color: var(--adm-amber-ink); }
+.adm-member-avatar.is-red { background: var(--adm-red-soft); color: var(--adm-red); }
+
+.adm-member-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.adm-member-text strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--adm-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.adm-member-text small { color: var(--adm-muted); font-size: 11px; line-height: 1.4; }
+.adm-member-text .is-link { color: var(--adm-violet); }
+.adm-member-text .is-lock { color: var(--adm-red); }
+
+.adm-member-email {
+  display: block;
+  max-width: 230px;
+  overflow: hidden;
+  color: var(--adm-body);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-member-date { color: var(--adm-body); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+
+.adm-role-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.adm-role-pill.is-violet { border-color: #e6e0ff; background: #f4f1ff; color: #5b46f5; }
+.adm-role-pill.is-amber { border-color: #f8e6bf; background: #fff6e5; color: var(--adm-amber-ink); }
+.adm-role-pill.is-red { border-color: #f9d5d6; background: var(--adm-red-soft); color: var(--adm-red); }
+
+/* ---------------- Tiến độ học tập ---------------- */
+.adm-progress { display: flex; flex-direction: column; gap: 6px; min-width: 158px; }
+.adm-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.adm-progress-label { color: var(--adm-body); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.adm-progress .adm-track { height: 6px; }
+.adm-progress .adm-pill { flex: 0 0 auto; padding: 2px 7px; font-size: 10px; }
+
+/* ---------------- Trạng thái / nút thao tác ---------------- */
+.adm-badge.is-locked { background: var(--adm-red-soft); color: var(--adm-red); }
+
+.adm-eye-btn.is-danger:hover { border-color: #f6c4c4; background: var(--adm-red-soft); color: var(--adm-red); }
+
+/* ---------------- Chân bảng + phân trang ---------------- */
+/* .adm-table-foot / .adm-pager* đã chuyển sang AdminConsole.css để dùng chung. */
+
+/* ---------------- Ghi chú bảo mật ---------------- */
+.adm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e6e0ff;
+  border-radius: 16px;
+  background: #f7f5ff;
+  color: #4b3fa8;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.adm-note p { margin: 0; }
+.adm-note b { color: #3b2f96; }
+
+.adm-note-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--adm-violet);
+  box-shadow: 0 4px 10px rgba(35, 31, 96, 0.08);
+}
+
+/* ---------------- Responsive ---------------- */
+/* Thanh lọc + phân trang đã có rule responsive trong AdminConsole.css. */
+@media (max-width: 760px) {
+  .adm-panel-flush .adm-table-wrap { padding: 2px 4px 0; }
+  .adm-note { padding: 14px; font-size: 11px; border-radius: 14px; }
+}
