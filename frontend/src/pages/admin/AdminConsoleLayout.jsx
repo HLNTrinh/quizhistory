@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ClipboardList,
   FileBarChart,
+  FolderTree,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -19,6 +20,7 @@ import "./AdminConsole.css";
 const consoleNav = [
   { path: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { path: "/admin/users", label: "Người dùng", icon: Users },
+  { path: "/admin/categories", label: "Chủ đề", icon: FolderTree },
   { path: "/admin/packages", label: "Gói câu hỏi", icon: Package, badge: 24 },
   { path: "/admin/question-sets", label: "Bộ câu hỏi", icon: ClipboardList, badge: 186 },
   { path: "/admin/questions", label: "Ngân hàng câu hỏi", icon: BookOpenCheck },

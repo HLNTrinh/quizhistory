@@ -9,6 +9,7 @@ import ProfilePage from "./pages/user/ProfilePage.jsx";
 import StudyHomePage from "./pages/user/StudyHomePage.jsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
 import AdminLoginPage from "./pages/admin/AdminLoginPage.jsx";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage.jsx";
 import AdminPackagesPage from "./pages/admin/AdminPackagesPage.jsx";
 import AdminQuestionSetsPage from "./pages/admin/AdminQuestionSetsPage.jsx";
 import AdminQuestionsPage from "./pages/admin/AdminQuestionsPage.jsx";
@@ -97,6 +98,9 @@ export default function App() {
     }
     if (pathname === "/admin/users") {
       return <AdminUsersPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+    }
+    if (pathname === "/admin/categories") {
+      return <AdminCategoriesPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
     }
     if (pathname === "/admin/packages") {
       return <AdminPackagesPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;

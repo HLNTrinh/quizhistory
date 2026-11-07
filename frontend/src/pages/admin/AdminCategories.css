@@ -1,0 +1,113 @@
+/* ============================================================
+   Admin — trang Chủ đề / Thời kỳ lịch sử (AdminCategoriesPage)
+   Bổ sung thành phần riêng: biểu tượng, mô tả, số gói, bảng chủ đề.
+   Dùng lại biến màu khai báo trong .adm-app (AdminConsole.css).
+   Thanh lọc / chân bảng / phân trang dùng chung từ AdminConsole.css.
+   ============================================================ */
+
+.adm-stat-icon.is-violet { background: var(--adm-violet-soft); color: var(--adm-violet); }
+.adm-badge.is-inactive { background: #f1f0f9; color: #6b6f92; }
+
+/* ---------------- Thẻ số liệu ---------------- */
+.adm-stat { height: 100%; }
+.adm-stat-footer { align-items: center; }
+.adm-stat-footer > span:last-child { min-width: 0; line-height: 1.45; }
+
+.adm-cat-stat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  color: var(--adm-body);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adm-cat-stat-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.adm-cat-stat-legend i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.adm-cat-stat-legend .is-open { color: var(--adm-green); }
+.adm-cat-stat-legend .is-archived { color: var(--adm-muted); }
+
+.adm-cat-stat-progress { display: flex; flex-direction: column; gap: 6px; }
+.adm-cat-stat-progress .adm-track { height: 6px; }
+.adm-cat-stat-progress small { color: var(--adm-muted); font-size: 11px; font-weight: 600; line-height: 1.4; }
+
+/* ---------------- Bảng chủ đề ---------------- */
+.adm-table-categories { min-width: 1120px; }
+.adm-table-categories th { padding: 12px; }
+.adm-table-categories td { padding: 14px 12px; }
+.adm-table-categories th:last-child,
+.adm-table-categories td:last-child { text-align: left; }
+
+.adm-cat-thumb {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+.adm-cat-thumb.is-amber { background: var(--adm-amber-soft); color: var(--adm-amber-ink); }
+.adm-cat-thumb.is-violet { background: #efecff; color: #6a5af9; }
+.adm-cat-thumb.is-green { background: var(--adm-green-soft); color: var(--adm-green-ink); }
+.adm-cat-thumb.is-blue { background: var(--adm-blue-soft); color: var(--adm-blue-ink); }
+.adm-cat-thumb.is-purple { background: var(--adm-purple-soft); color: var(--adm-purple); }
+
+.adm-cat-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adm-cat-name strong { color: var(--adm-ink); font-size: 12.5px; font-weight: 700; line-height: 1.35; }
+
+.adm-cat-name small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.adm-cat-name small svg { flex: 0 0 auto; color: #b7bad2; }
+
+.adm-cat-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 300px;
+  margin: 0;
+  color: var(--adm-body);
+  font-size: 11.5px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.adm-cat-count {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--adm-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-cat-count small { color: var(--adm-muted); font-size: 10.5px; font-weight: 600; }
+
+.adm-cat-date { color: var(--adm-body); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+
+/* ---------------- Nút thao tác trong bảng ---------------- */
+.adm-table-categories .adm-table-actions { justify-content: center; }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1240px) {
+  .adm-table-categories { min-width: 1080px; }
+}
+
+@media (max-width: 760px) {
+  .adm-filter-bar.is-categories .adm-filter-actions .adm-primary { flex: 1 1 100%; justify-content: center; }
+  .adm-cat-desc { max-width: 240px; }
+  .adm-cat-stat-legend { gap: 5px 10px; font-size: 10.5px; }
+}
+
+@media (max-width: 520px) {
+  .adm-table-categories { min-width: 1000px; }
+  .adm-cat-desc { max-width: 200px; }
+}
