@@ -12,12 +12,14 @@ import {
   Flag,
   Landmark,
   Layers,
+  Pencil,
   Percent,
   Plus,
   ScrollText,
   Ship,
   Shield,
   SlidersHorizontal,
+  Trash2,
   Zap
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
@@ -209,13 +211,14 @@ const initialPackages = [
   }
 ];
 
-export default function AdminPackagesPage({ admin, onLogout }) {
+export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   const [query, setQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [unreadCount, setUnreadCount] = useState(3);
   const [toast, setToast] = useState("");
+  const [packages, setPackages] = useState(initialPackages);
   const toastTimer = useRef(null);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
@@ -233,7 +236,7 @@ export default function AdminPackagesPage({ admin, onLogout }) {
 
   const filteredPackages = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    const rows = initialPackages.filter((row) => {
+    const rows = packages.filter((row) => {
       const matchKeyword = !keyword
         || row.name.toLowerCase().includes(keyword)
         || row.period.toLowerCase().includes(keyword)
@@ -254,12 +257,22 @@ export default function AdminPackagesPage({ admin, onLogout }) {
       sorted.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
     }
     return sorted;
-  }, [query, difficultyFilter, statusFilter, sortOrder]);
+  }, [packages, query, difficultyFilter, statusFilter, sortOrder]);
+
+  function handleEditPackage(row) {
+    showToast(`Chỉnh sửa gói “${row.name}” sẽ có ở bước nối API.`);
+  }
+
+  function handleDeletePackage(row) {
+    setPackages((current) => current.filter((item) => item.id !== row.id));
+    showToast(`Đã xóa gói “${row.name}” (dữ liệu mẫu).`);
+  }
 
   return (
     <AdminConsoleLayout
       admin={admin}
       onLogout={onLogout}
+      onNavigate={onNavigate}
       activePath="/admin/packages"
       breadcrumb="Quản trị / Quản lý gói câu hỏi"
       actions={
@@ -330,7 +343,7 @@ export default function AdminPackagesPage({ admin, onLogout }) {
         })}
       </div>
 
-      <section className="adm-filter-bar" aria-label="Bộ lọc gói câu hỏi">
+      <section className="adm-filter-bar is-packages" aria-label="Bộ lọc gói câu hỏi">
         <select
           className="adm-filter-select"
           value={difficultyFilter}
@@ -400,12 +413,13 @@ export default function AdminPackagesPage({ admin, onLogout }) {
                 <th scope="col">Điểm &amp; lượng</th>
                 <th scope="col">Trạng thái</th>
                 <th scope="col">Ngày</th>
+                <th scope="col">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {filteredPackages.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="adm-empty-row">
+                  <td colSpan={9} className="adm-empty-row">
                     Không tìm thấy gói câu hỏi phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
@@ -458,6 +472,26 @@ export default function AdminPackagesPage({ admin, onLogout }) {
                       </td>
                       <td>
                         <span className="adm-pkg-date">{row.updatedAt}</span>
+                      </td>
+                      <td>
+                        <div className="adm-table-actions">
+                          <button
+                            type="button"
+                            className="adm-eye-btn"
+                            onClick={() => handleEditPackage(row)}
+                            aria-label={`Chỉnh sửa ${row.name}`}
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="adm-eye-btn is-danger"
+                            onClick={() => handleDeletePackage(row)}
+                            aria-label={`Xóa ${row.name}`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

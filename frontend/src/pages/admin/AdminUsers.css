@@ -19,8 +19,7 @@
    đã được chuyển sang AdminConsole.css để mọi trang danh sách dùng chung. */
 
 /* ---------------- Bảng thành viên ---------------- */
-.adm-panel-flush { padding: 0; overflow: hidden; }
-.adm-panel-flush .adm-table-wrap { margin: 0; padding: 4px 8px 0; }
+/* .adm-panel-flush (panel tràn viền cho bảng) đã chuyển sang AdminConsole.css. */
 
 .adm-table-users { min-width: 1060px; }
 .adm-table-users th { padding: 12px; }
@@ -137,6 +136,5 @@
 /* ---------------- Responsive ---------------- */
 /* Thanh lọc + phân trang đã có rule responsive trong AdminConsole.css. */
 @media (max-width: 760px) {
-  .adm-panel-flush .adm-table-wrap { padding: 2px 4px 0; }
   .adm-note { padding: 14px; font-size: 11px; border-radius: 14px; }
 }

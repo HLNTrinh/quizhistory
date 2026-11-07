@@ -10,13 +10,13 @@ import StudyHomePage from "./pages/user/StudyHomePage.jsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
 import AdminLoginPage from "./pages/admin/AdminLoginPage.jsx";
 import AdminPackagesPage from "./pages/admin/AdminPackagesPage.jsx";
+import AdminQuestionSetsPage from "./pages/admin/AdminQuestionSetsPage.jsx";
+import AdminQuestionsPage from "./pages/admin/AdminQuestionsPage.jsx";
+import AdminLeaderboardPage from "./pages/admin/AdminLeaderboardPage.jsx";
 import AdminSectionPage from "./pages/admin/AdminSectionPage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 
 const adminSectionTitles = {
-  "/admin/question-sets": "Bộ câu hỏi",
-  "/admin/questions": "Ngân hàng câu hỏi",
-  "/admin/leaderboard": "Bảng xếp hạng",
   "/admin/reports": "Báo cáo",
   "/admin/settings": "Cài đặt"
 };
@@ -100,6 +100,15 @@ export default function App() {
     }
     if (pathname === "/admin/packages") {
       return <AdminPackagesPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+    }
+    if (pathname === "/admin/question-sets") {
+      return <AdminQuestionSetsPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+    }
+    if (pathname === "/admin/questions") {
+      return <AdminQuestionsPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
+    }
+    if (pathname === "/admin/leaderboard") {
+      return <AdminLeaderboardPage admin={adminUser} onLogout={adminLogout} onNavigate={navigate} />;
     }
     const sectionTitle = adminSectionTitles[pathname];
     if (pathname !== "/admin" && sectionTitle) {

@@ -1,0 +1,300 @@
+/* ============================================================
+   Admin — trang Bảng xếp hạng người học (AdminLeaderboardPage)
+   Bổ sung thành phần riêng: ô tìm kiếm trong thanh lọc, khối sắp xếp,
+   dòng chip "Đang lọc theo", bảng xếp hạng (huy hiệu hạng, học viên,
+   cấp bậc, XP, tiến trình, độ chính xác) và ghi chú công bằng.
+   Dùng lại biến màu khai báo trong .adm-app (AdminConsole.css).
+   Thanh lọc / chân bảng / phân trang / toast dùng chung từ AdminConsole.css.
+   ============================================================ */
+
+.adm-stat-icon.is-violet { background: var(--adm-violet-soft); color: var(--adm-violet); }
+
+/* ---------------- Thẻ số liệu ---------------- */
+.adm-rank-stat-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.adm-rank-stat-note svg { flex: 0 0 auto; }
+.adm-rank-stat-note.is-green { color: #0f9d6b; }
+
+/* ---------------- Thanh lọc ---------------- */
+.adm-filter-bar.is-leaderboard { gap: 10px; }
+.adm-filter-bar.is-leaderboard .adm-filter-select { flex: 0 1 auto; }
+.adm-filter-bar.is-leaderboard .adm-filter-reset { padding: 0 12px; }
+
+/* Khối sắp xếp */
+.adm-rank-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--adm-line);
+  border-radius: 11px;
+  background: #fff;
+  color: #8b8fae;
+}
+
+.adm-rank-sort svg { flex: 0 0 auto; }
+
+.adm-rank-sort select {
+  height: 100%;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--adm-body);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Dòng chip "Đang lọc theo" */
+.adm-rank-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 0 100%;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px dashed #f0eef9;
+}
+
+.adm-rank-chips-label { color: var(--adm-muted); font-size: 11px; font-weight: 600; }
+
+.adm-rank-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  border-radius: 8px;
+  background: var(--adm-violet-soft);
+  color: var(--adm-violet);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-rank-chip button {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.adm-rank-chip button:hover { background: rgba(91, 70, 245, 0.14); }
+.adm-rank-chip button:disabled { opacity: 0.4; cursor: default; }
+
+.adm-rank-chips-count { margin-left: auto; color: var(--adm-muted); font-size: 11px; font-weight: 600; }
+
+/* ---------------- Bảng xếp hạng ---------------- */
+.adm-table-rank { min-width: 1160px; }
+.adm-table-rank th { padding: 12px; }
+.adm-table-rank td { padding: 14px 12px; vertical-align: middle; }
+.adm-table-rank th:first-child,
+.adm-table-rank td:first-child { width: 92px; }
+.adm-table-rank th:last-child,
+.adm-table-rank td:last-child { text-align: left; }
+
+/* Huy hiệu thứ hạng */
+.adm-rank-medal {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #eceaf7;
+  border-radius: 50%;
+  background: #f5f4fb;
+  color: var(--adm-body);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.adm-rank-medal.is-gold {
+  border-color: #f3d488;
+  background: linear-gradient(135deg, #fde9b8, #f6cf6e);
+  color: #8a5a0b;
+  box-shadow: 0 6px 14px rgba(240, 190, 80, 0.3);
+}
+
+.adm-rank-medal.is-silver {
+  border-color: #dfe2ee;
+  background: linear-gradient(135deg, #f2f3f8, #dfe2ee);
+  color: #5b6180;
+}
+
+.adm-rank-medal.is-bronze {
+  border-color: #f0cdb2;
+  background: linear-gradient(135deg, #fce3d3, #f3c9a8);
+  color: #94512a;
+}
+
+/* Cột học viên */
+.adm-rank-student { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.adm-rank-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dcd6ff, #bdb2ff);
+  color: #3f2ecf;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.adm-rank-star {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #f6b93b;
+  color: #fff;
+}
+
+.adm-rank-user { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.adm-rank-user strong { color: var(--adm-ink); font-size: 12.5px; font-weight: 700; }
+
+.adm-rank-id {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--adm-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adm-rank-dot { width: 5px; height: 5px; border-radius: 50%; background: #2ec98a; }
+.adm-rank-user small { color: var(--adm-muted); font-size: 10.5px; }
+
+/* Cột cấp bậc / danh hiệu */
+.adm-rank-tier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 110px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.adm-rank-tier.is-amber { border: 1px solid #f6e3ac; background: #fdf3d7; color: #a9761a; }
+.adm-rank-tier.is-violet { border: 1px solid #e0d8ff; background: #efeaff; color: #5b46f5; }
+.adm-rank-tier.is-blue { border: 1px solid #dbe5ff; background: #eaf0ff; color: #3b6ef0; }
+.adm-rank-tier.is-green { border: 1px solid #d3f0e2; background: #e6f8ef; color: #0f9d6b; }
+
+/* Cột tổng XP */
+.adm-rank-xp { display: flex; flex-direction: column; gap: 3px; }
+.adm-rank-xp b { color: var(--adm-violet); font-size: 15px; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+.adm-rank-xp b small { color: var(--adm-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.02em; }
+.adm-rank-xp em { color: var(--adm-muted); font-size: 10.5px; font-style: normal; font-weight: 600; white-space: nowrap; }
+.adm-rank-xp em.is-up { color: #6a5af9; }
+
+/* Cột tiến trình */
+.adm-rank-progress { display: flex; flex-direction: column; gap: 6px; min-width: 132px; }
+
+.adm-rank-progress > span:first-child {
+  color: var(--adm-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-rank-progress > span:first-child i { margin: 0 2px; color: #c3c0d6; font-style: normal; }
+.adm-rank-progress .adm-track { height: 6px; background: #f2f1fa; }
+.adm-rank-progress .adm-track i { background: linear-gradient(90deg, #8577ff, #5b46f5); }
+.adm-rank-progress .adm-track i.is-top { background: linear-gradient(90deg, #45d9b6, #1fb89c); }
+
+/* Cột độ chính xác */
+.adm-rank-accuracy {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: #e6f8ef;
+  color: #0f9d6b;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Cột cập nhật */
+.adm-rank-updated { color: var(--adm-muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+/* ---------------- Ghi chú công bằng ---------------- */
+.adm-rank-note {
+  display: flex;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e4defb;
+  border-radius: 14px;
+  background: #f7f5ff;
+  color: #5d5891;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.adm-rank-note-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #efeaff;
+  color: var(--adm-violet);
+}
+
+.adm-rank-note p { margin: 0; }
+.adm-rank-note b { color: #4b3fa8; font-weight: 800; }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1240px) {
+  .adm-table-rank { min-width: 1100px; }
+  .adm-filter-bar.is-leaderboard .adm-filter-select { flex: 1 1 calc(50% - 5px); }
+  .adm-filter-bar.is-leaderboard .adm-rank-sort { flex: 1 1 calc(100% - 52px); justify-content: center; }
+  .adm-filter-bar.is-leaderboard .adm-rank-sort select { flex: 1; min-width: 0; }
+}
+
+@media (max-width: 760px) {
+  .adm-table-rank { min-width: 1000px; }
+  .adm-table-rank th { padding: 10px; }
+  .adm-table-rank td { padding: 12px 10px; }
+  .adm-filter-bar.is-leaderboard .adm-filter-select { flex: 1 1 100%; }
+  .adm-filter-bar.is-leaderboard .adm-rank-sort { flex: 1 1 calc(100% - 52px); }
+  .adm-filter-bar.is-leaderboard .adm-filter-reset { flex: 0 0 42px; width: 42px; padding: 0; }
+  .adm-rank-chips-count { flex: 1 0 100%; margin-left: 0; }
+  .adm-rank-note { padding: 14px; font-size: 11.5px; }
+}
+
+@media (max-width: 520px) {
+  .adm-table-rank { min-width: 920px; }
+  .adm-rank-chips { gap: 6px; }
+  .adm-rank-tier { max-width: none; white-space: nowrap; }
+}

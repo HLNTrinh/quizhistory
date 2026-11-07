@@ -8,6 +8,7 @@ import { buildInitials } from "./AdminConsoleLayout.jsx";
 export default function AdminTopActions({
   admin,
   onLogout,
+  showSearch = true,
   searchValue = "",
   onSearchChange,
   searchPlaceholder = "Tìm người dùng, gói, bộ đề...",
@@ -43,18 +44,20 @@ export default function AdminTopActions({
 
   return (
     <>
-      <label className="adm-search">
-        <Search size={15} aria-hidden="true" />
-        <input
-          ref={searchRef}
-          type="search"
-          value={searchValue}
-          onChange={(event) => onSearchChange?.(event.target.value)}
-          placeholder={searchPlaceholder}
-          aria-label={searchLabel}
-        />
-        <kbd>Ctrl K</kbd>
-      </label>
+      {showSearch ? (
+        <label className="adm-search">
+          <Search size={15} aria-hidden="true" />
+          <input
+            ref={searchRef}
+            type="search"
+            value={searchValue}
+            onChange={(event) => onSearchChange?.(event.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label={searchLabel}
+          />
+          <kbd>Ctrl K</kbd>
+        </label>
+      ) : null}
 
       {extraAction}
 

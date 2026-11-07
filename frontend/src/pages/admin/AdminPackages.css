@@ -34,39 +34,7 @@
 .adm-pkg-stat-progress small { color: var(--adm-muted); font-size: 11px; font-weight: 600; line-height: 1.4; }
 
 /* ---------------- Khối sắp xếp ---------------- */
-.adm-sort {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 42px;
-  padding: 0 12px;
-  border: 1px solid #dcd5ff;
-  border-radius: 11px;
-  background: #f5f2ff;
-  color: var(--adm-violet);
-}
-
-.adm-sort svg { flex: 0 0 auto; }
-
-.adm-sort-label {
-  color: #6b5dd3;
-  font-size: 11.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.adm-sort select {
-  height: 100%;
-  max-width: 100%;
-  border: 0;
-  background: transparent;
-  color: #4b3fa8;
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-  outline: none;
-}
+/* .adm-sort / .adm-sort-label / .adm-sort select đã chuyển sang AdminConsole.css để dùng chung. */
 
 /* ---------------- Bảng gói câu hỏi ---------------- */
 .adm-table-packages { min-width: 1240px; }
@@ -159,21 +127,21 @@
 
 .adm-pkg-date { color: var(--adm-body); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
 
+/* ---------------- Nút thao tác trong bảng ---------------- */
+.adm-table-packages .adm-table-actions { justify-content: center; }
+
 /* ---------------- Responsive ---------------- */
 @media (max-width: 1240px) {
-  .adm-table-packages { min-width: 1120px; }
+  .adm-table-packages { min-width: 1200px; }
 }
 
 @media (max-width: 760px) {
-  .adm-sort { flex: 1 1 100%; justify-content: center; }
-  .adm-sort select { flex: 1; min-width: 0; }
-  .adm-sort-label { display: none; }
-  .adm-filter-actions .adm-primary { flex: 1 1 100%; justify-content: center; }
+  .adm-filter-bar.is-packages .adm-filter-actions .adm-primary { flex: 1 1 100%; justify-content: center; }
   .adm-pkg-desc { max-width: 220px; }
   .adm-pkg-stat-legend { gap: 5px 10px; font-size: 10.5px; }
 }
 
 @media (max-width: 520px) {
-  .adm-table-packages { min-width: 1040px; }
+  .adm-table-packages { min-width: 1120px; }
   .adm-pkg-desc { max-width: 190px; }
 }

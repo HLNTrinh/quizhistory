@@ -1,0 +1,166 @@
+/* ============================================================
+   Admin — trang Ngân hàng câu hỏi (AdminQuestionsPage)
+   Bổ sung thành phần riêng: chú thích/thanh tiến độ thẻ số liệu,
+   bảng câu hỏi (mã ID, chủ đề, độ khó, bộ đề, đáp án, ngày sửa).
+   Dùng lại biến màu khai báo trong .adm-app (AdminConsole.css).
+   Thanh lọc / chân bảng / phân trang / toast dùng chung từ AdminConsole.css.
+   ============================================================ */
+
+.adm-stat-icon.is-violet { background: var(--adm-violet-soft); color: var(--adm-violet); }
+
+/* ---------------- Thẻ số liệu ---------------- */
+.adm-q-stat-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.adm-q-stat-note svg { flex: 0 0 auto; }
+.adm-q-stat-note.is-green { color: #0f9d6b; }
+
+.adm-q-stat-progress { display: flex; flex-direction: column; gap: 7px; }
+
+.adm-q-stat-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.adm-q-stat-progress-top b { color: var(--adm-violet); font-size: 11.5px; font-weight: 800; }
+.adm-q-stat-progress .adm-track { height: 7px; }
+
+/* ---------------- Bảng câu hỏi ---------------- */
+.adm-table-questions { min-width: 1260px; }
+.adm-table-questions th { padding: 12px 14px; }
+.adm-table-questions td { padding: 14px; vertical-align: middle; }
+.adm-table-questions th:first-child,
+.adm-table-questions td:first-child { min-width: 300px; }
+.adm-table-questions th:last-child,
+.adm-table-questions td:last-child { text-align: left; }
+
+/* Cột mã ID + nội dung câu hỏi */
+.adm-q-cell { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.adm-q-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.adm-q-code {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #f3f0ff;
+  color: #6a5af9;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.adm-q-type { color: var(--adm-muted); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+
+.adm-q-content {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-width: 330px;
+  overflow: hidden;
+  color: var(--adm-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* Cột chủ đề */
+.adm-q-topic {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: #f4f2ff;
+  color: #5b46f5;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Cột độ khó */
+.adm-q-diff {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-q-diff.is-green { background: #e2f8ee; color: #0f9d6b; }
+.adm-q-diff.is-amber { background: #fdf1d8; color: #b07b12; }
+.adm-q-diff.is-red { background: #fde7e9; color: #d63a4a; }
+
+/* Cột bộ đề đang sử dụng */
+.adm-q-set {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5b46f5;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-q-set svg { flex: 0 0 auto; color: #8b7bff; }
+.adm-q-set.is-empty { color: var(--adm-muted); font-weight: 600; font-style: italic; }
+
+/* Cột đáp án đúng */
+.adm-q-answer { display: inline-flex; align-items: center; gap: 7px; }
+
+.adm-q-answer-letter {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  background: #e2f8ee;
+  color: #0f9d6b;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.adm-q-answer-text { color: var(--adm-body); font-size: 12px; font-weight: 600; }
+.adm-q-verified { flex: 0 0 auto; color: #12b981; }
+.adm-q-pending { flex: 0 0 auto; color: #c3c0d6; }
+
+/* Cột ngày tạo / sửa */
+.adm-q-date { color: var(--adm-muted); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1240px) {
+  .adm-table-questions { min-width: 1180px; }
+  .adm-q-content { max-width: 290px; }
+}
+
+@media (max-width: 760px) {
+  .adm-table-questions { min-width: 1060px; }
+  .adm-table-questions th { padding: 10px; }
+  .adm-table-questions td { padding: 12px 10px; }
+  .adm-table-questions th:first-child,
+  .adm-table-questions td:first-child { min-width: 240px; }
+  .adm-q-content { max-width: 220px; font-size: 12.5px; }
+  .adm-q-type { display: none; }
+}
+
+@media (max-width: 520px) {
+  .adm-table-questions { min-width: 980px; }
+  .adm-q-content { max-width: 190px; }
+  .adm-q-topic,
+  .adm-q-set { white-space: normal; }
+}

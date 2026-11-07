@@ -20,10 +20,10 @@ const consoleNav = [
   { path: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { path: "/admin/users", label: "Người dùng", icon: Users },
   { path: "/admin/packages", label: "Gói câu hỏi", icon: Package, badge: 24 },
-  { path: "/admin/question-sets", label: "Bộ câu hỏi", icon: ClipboardList },
+  { path: "/admin/question-sets", label: "Bộ câu hỏi", icon: ClipboardList, badge: 186 },
   { path: "/admin/questions", label: "Ngân hàng câu hỏi", icon: BookOpenCheck },
-  { path: "/admin/leaderboard", label: "Bảng xếp hạng", icon: Trophy },
-  { path: "/admin/reports", label: "Thống kê", icon: FileBarChart }
+  { path: "/admin/leaderboard", label: "Bảng xếp hạng", icon: Trophy }
+  // { path: "/admin/reports", label: "Thống kê", icon: FileBarChart }
 ];
 
 const consoleFooterLinks = [
@@ -101,7 +101,7 @@ export default function AdminConsoleLayout({
                   key={item.path}
                   type="button"
                   className={`adm-nav-link${isActive ? " is-active" : ""}`}
-                  onClick={() => onNavigate(item.path)}
+                  onClick={() => onNavigate?.(item.path)}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <Icon size={17} />
@@ -113,13 +113,13 @@ export default function AdminConsoleLayout({
           </nav>
 
           <div className="adm-sidebar-foot">
-            <div className="adm-server-status">
+            {/* <div className="adm-server-status">
               <span className="adm-server-dot" aria-hidden="true" />
               <span>Máy chủ ổn định</span>
               <b>v2.4</b>
-            </div>
+            </div> */}
             <button type="button" className="adm-logout" onClick={onLogout}>
-              <LogOut size={16} /> Đăng xuất an toàn
+              <LogOut size={16} /> Đăng xuất
             </button>
           </div>
         </aside>
