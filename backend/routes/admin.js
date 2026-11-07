@@ -1,5 +1,17 @@
 import { Router } from "express";
 import { adminCurrentUser, adminLogin, adminOverview } from "../app/Controllers/AdminAuthController.js";
+import {
+  adminCategories,
+  adminCreateCategory,
+  adminDeleteCategory,
+  adminUpdateCategory
+} from "../app/Controllers/AdminCategoryController.js";
+import {
+  adminCreateUser,
+  adminDeleteUser,
+  adminUpdateUser,
+  adminUsers
+} from "../app/Controllers/AdminUserController.js";
 import { requireAdmin } from "../app/Middleware/requireAuth.js";
 import { createRateLimiter } from "../app/Middleware/rateLimit.js";
 
@@ -16,5 +28,17 @@ const loginLimiter = createRateLimiter({
 router.post("/auth/login", loginLimiter, adminLogin);
 router.get("/auth/me", requireAdmin, adminCurrentUser);
 router.get("/overview", requireAdmin, adminOverview);
+
+// Quản lý người dùng
+router.get("/users", requireAdmin, adminUsers);
+router.post("/users", requireAdmin, adminCreateUser);
+router.patch("/users/:id", requireAdmin, adminUpdateUser);
+router.delete("/users/:id", requireAdmin, adminDeleteUser);
+
+// Quản lý chủ đề / thời kỳ lịch sử
+router.get("/categories", requireAdmin, adminCategories);
+router.post("/categories", requireAdmin, adminCreateCategory);
+router.patch("/categories/:id", requireAdmin, adminUpdateCategory);
+router.delete("/categories/:id", requireAdmin, adminDeleteCategory);
 
 export default router;

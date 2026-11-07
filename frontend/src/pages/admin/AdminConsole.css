@@ -905,7 +905,16 @@
 
 .adm-pager-btn:hover { border-color: #d9d5f5; color: var(--adm-violet); }
 .adm-pager-btn.is-active { border-color: var(--adm-violet); background: var(--adm-violet); color: #fff; }
+.adm-pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.adm-pager-btn:disabled:hover { border-color: var(--adm-line); color: var(--adm-body); }
 .adm-pager-gap { color: var(--adm-muted); font-weight: 700; }
+
+.adm-primary:disabled,
+.adm-ghost:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
 /* ---------------- Activity log ---------------- */
 .adm-activity { display: flex; flex-direction: column; }
