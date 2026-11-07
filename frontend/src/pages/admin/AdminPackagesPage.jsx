@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
+import AdminFormModal from "./AdminFormModal.jsx";
 import "./AdminPackages.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -110,6 +111,30 @@ const statusMeta = {
   open: { label: "Đang mở", badge: "is-open" },
   draft: { label: "Bản nháp", badge: "is-draft" },
   archived: { label: "Lưu trữ", badge: "is-archived" }
+};
+
+const periodOptions = [
+  "Thời kỳ Cổ đại Việt Nam",
+  "Thời kỳ Bắc thuộc & Độc lập",
+  "Thời nhà Lý (1075 - 1077)",
+  "Thời nhà Trần (1258 - 1288)",
+  "Kháng chiến chống Pháp (1945 - 1954)",
+  "Kháng chiến chống Mỹ (1954 - 1975)",
+  "Thời kỳ Đổi mới & hội nhập"
+];
+
+const difficultyTone = { easy: "green", medium: "amber", hard: "violet" };
+
+const emptyPackageForm = {
+  name: "",
+  period: periodOptions[0],
+  description: "",
+  difficulty: "medium",
+  setCount: "6",
+  questionCount: "60",
+  xp: "600",
+  minutes: "30",
+  status: "draft"
 };
 
 const initialPackages = [
@@ -220,6 +245,9 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   const [toast, setToast] = useState("");
   const [packages, setPackages] = useState(initialPackages);
   const toastTimer = useRef(null);
+  const [packageModal, setPackageModal] = useState(null); // "create" | "edit" | null
+  const [activePackage, setActivePackage] = useState(null);
+  const [form, setForm] = useState(emptyPackageForm);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
@@ -259,8 +287,77 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
     return sorted;
   }, [packages, query, difficultyFilter, statusFilter, sortOrder]);
 
+  function updateForm(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function openCreatePackage() {
+    setActivePackage(null);
+    setForm(emptyPackageForm);
+    setPackageModal("create");
+  }
+
   function handleEditPackage(row) {
-    showToast(`Chỉnh sửa gói “${row.name}” sẽ có ở bước nối API.`);
+    setActivePackage(row);
+    setForm({
+      name: row.name,
+      period: row.period,
+      description: row.description,
+      difficulty: row.difficulty,
+      setCount: String(row.setCount),
+      questionCount: String(row.questionCount),
+      xp: String(row.xp),
+      minutes: String(row.minutes),
+      status: row.status
+    });
+    setPackageModal("edit");
+  }
+
+  function closePackageModal() {
+    setPackageModal(null);
+    setActivePackage(null);
+  }
+
+  function handlePackageSubmit(event) {
+    event.preventDefault();
+    const name = form.name.trim();
+    if (!name) {
+      showToast("Vui lòng nhập tên gói câu hỏi trước khi lưu.");
+      return;
+    }
+
+    const now = new Date();
+    const updatedAt = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const sortDate = now.toISOString().slice(0, 10);
+    const payload = {
+      name,
+      period: form.period,
+      description: form.description.trim() || "Chưa có mô tả cho gói câu hỏi này.",
+      difficulty: form.difficulty,
+      setCount: Number(form.setCount) || 0,
+      questionCount: Number(form.questionCount) || 0,
+      xp: Number(form.xp) || 0,
+      minutes: Number(form.minutes) || 0,
+      status: form.status,
+      updatedAt: "Vừa xong",
+      sortDate
+    };
+
+    if (packageModal === "edit" && activePackage) {
+      setPackages((current) => current.map((row) => (row.id === activePackage.id
+        ? { ...row, ...payload }
+        : row)));
+      showToast(`Đã cập nhật gói “${name}” (dữ liệu mẫu).`);
+    } else {
+      setPackages((current) => [{
+        id: `pk-${Date.now()}`,
+        icon: Flag,
+        tone: difficultyTone[form.difficulty] || "violet",
+        ...payload
+      }, ...current]);
+      showToast(`Đã tạo gói “${name}” (dữ liệu mẫu, chưa lưu máy chủ).`);
+    }
+    closePackageModal();
   }
 
   function handleDeletePackage(row) {
@@ -393,7 +490,7 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
           <button
             type="button"
             className="adm-primary"
-            onClick={() => showToast("Biểu mẫu tạo gói câu hỏi sẽ được nối API ở bước tiếp theo.")}
+            onClick={openCreatePackage}
           >
             <Plus size={16} /> Tạo gói câu hỏi mới
           </button>
@@ -529,6 +626,135 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
           </div>
         </div>
       </section>
+
+      {packageModal ? (
+        <AdminFormModal
+          title={packageModal === "edit" ? "Chỉnh sửa gói câu hỏi" : "Tạo gói câu hỏi mới"}
+          subtitle="Giao diện mẫu — dữ liệu chưa được lưu lên máy chủ."
+          size="lg"
+          submitLabel={packageModal === "edit" ? "Lưu thay đổi" : "Tạo gói ngay"}
+          onSubmit={handlePackageSubmit}
+          onClose={closePackageModal}
+        >
+          <div className="adm-field-row">
+            <div className="adm-field adm-field-full">
+              <label htmlFor="adm-pkg-name">Tên gói câu hỏi</label>
+              <input
+                id="adm-pkg-name"
+                className="adm-input"
+                value={form.name}
+                onChange={(event) => updateForm("name", event.target.value)}
+                placeholder="Ví dụ: Chiến dịch Điện Biên Phủ 1954"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-period">Thời kỳ lịch sử</label>
+              <select
+                id="adm-pkg-period"
+                className="adm-select"
+                value={form.period}
+                onChange={(event) => updateForm("period", event.target.value)}
+              >
+                {periodOptions.map((period) => (
+                  <option key={period} value={period}>{period}</option>
+                ))}
+              </select>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-difficulty">Độ khó</label>
+              <select
+                id="adm-pkg-difficulty"
+                className="adm-select"
+                value={form.difficulty}
+                onChange={(event) => updateForm("difficulty", event.target.value)}
+              >
+                <option value="easy">Cơ bản</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Nâng cao</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-pkg-description">Mô tả tóm tắt</label>
+            <textarea
+              id="adm-pkg-description"
+              className="adm-textarea"
+              value={form.description}
+              onChange={(event) => updateForm("description", event.target.value)}
+              placeholder="Tóm tắt nội dung, bối cảnh lịch sử của gói câu hỏi..."
+            />
+          </div>
+
+          <div className="adm-field-row is-3">
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-sets">Số bộ đề</label>
+              <input
+                id="adm-pkg-sets"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.setCount}
+                onChange={(event) => updateForm("setCount", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-questions">Số câu trắc nghiệm</label>
+              <input
+                id="adm-pkg-questions"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.questionCount}
+                onChange={(event) => updateForm("questionCount", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-minutes">Thời lượng (phút)</label>
+              <input
+                id="adm-pkg-minutes"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.minutes}
+                onChange={(event) => updateForm("minutes", event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-xp">Điểm XP thưởng</label>
+              <input
+                id="adm-pkg-xp"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.xp}
+                onChange={(event) => updateForm("xp", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-pkg-status">Trạng thái xuất bản</label>
+              <select
+                id="adm-pkg-status"
+                className="adm-select"
+                value={form.status}
+                onChange={(event) => updateForm("status", event.target.value)}
+              >
+                <option value="open">Đang mở</option>
+                <option value="draft">Bản nháp</option>
+                <option value="archived">Lưu trữ</option>
+              </select>
+              <span className="adm-field-hint">Bản nháp sẽ không hiển thị với học viên ở cổng học tập.</span>
+            </div>
+          </div>
+        </AdminFormModal>
+      ) : null}
 
       {toast ? (
         <div className="adm-toast" role="status">

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
+import AdminFormModal from "./AdminFormModal.jsx";
 import "./AdminLeaderboard.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -202,6 +203,10 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
   const [unreadCount, setUnreadCount] = useState(1);
   const [toast, setToast] = useState("");
   const toastTimer = useRef(null);
+  const [learners, setLearners] = useState(initialLearners);
+  const [viewLearner, setViewLearner] = useState(null);
+  const [xpTarget, setXpTarget] = useState(null);
+  const [xpForm, setXpForm] = useState({ xp: "", delta: "" });
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
@@ -224,9 +229,40 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
     showToast("Đã đặt lại toàn bộ bộ lọc bảng xếp hạng.");
   }
 
+  function openLearnerProfile(row) {
+    setViewLearner(row);
+  }
+
+  function openXpAdjust(row) {
+    setXpTarget(row);
+    setXpForm({ xp: String(row.xp), delta: row.delta });
+    setViewLearner(null);
+  }
+
+  function closeLearnerModals() {
+    setViewLearner(null);
+    setXpTarget(null);
+  }
+
+  function handleXpSubmit(event) {
+    event.preventDefault();
+    if (!xpTarget) return;
+    const xp = Number(xpForm.xp);
+    if (!Number.isFinite(xp) || xp < 0) {
+      showToast("Điểm XP phải là số không âm.");
+      return;
+    }
+
+    setLearners((current) => current.map((row) => (row.id === xpTarget.id
+      ? { ...row, xp, delta: xpForm.delta.trim() || row.delta }
+      : row)));
+    showToast(`Đã cập nhật XP của ${xpTarget.name} (dữ liệu mẫu).`);
+    setXpTarget(null);
+  }
+
   const filteredLearners = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    const list = initialLearners.filter((row) => {
+    const list = learners.filter((row) => {
       const matchKeyword = !keyword
         || row.name.toLowerCase().includes(keyword)
         || row.id.toLowerCase().includes(keyword)
@@ -241,7 +277,7 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
       if (sort === "recent") return a.updatedMinutes - b.updatedMinutes;
       return b.xp - a.xp;
     });
-  }, [query, tier, sort]);
+  }, [learners, query, tier, sort]);
 
   const periodLabel = periodOptions.find((option) => option.value === period)?.label || "";
   const tierLabel = tierOptions.find((option) => option.value === tier)?.label || "";
@@ -460,7 +496,7 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
                           <button
                             type="button"
                             className="adm-eye-btn"
-                            onClick={() => showToast(`Hồ sơ học viên ${row.name} sẽ được mở ở bước tiếp theo.`)}
+                            onClick={() => openLearnerProfile(row)}
                             aria-label={`Xem hồ sơ ${row.name}`}
                           >
                             <Eye size={15} />
@@ -468,7 +504,7 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
                           <button
                             type="button"
                             className="adm-eye-btn"
-                            onClick={() => showToast(`Điều chỉnh XP của ${row.name} sẽ được nối API ở bước tiếp theo.`)}
+                            onClick={() => openXpAdjust(row)}
                             aria-label={`Điều chỉnh XP của ${row.name}`}
                           >
                             <SlidersHorizontal size={15} />
@@ -523,6 +559,67 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
           quản trị viên đều bắt buộc nhập lý do và được lưu trữ vĩnh viễn trong Audit Log.
         </p>
       </div>
+
+      {viewLearner ? (
+        <AdminFormModal
+          title={`Hồ sơ: ${viewLearner.name}`}
+          subtitle="Thông tin tham khảo — dữ liệu mẫu, chưa nối API."
+          size="lg"
+          onClose={closeLearnerModals}
+          footer={
+            <>
+              <button type="button" className="adm-ghost" onClick={closeLearnerModals}>Đóng</button>
+              <button type="button" className="adm-primary" onClick={() => openXpAdjust(viewLearner)}>Điều chỉnh XP</button>
+            </>
+          }
+        >
+          <div className="adm-detail">
+            <div className="adm-detail-row"><span>Mã học viên</span><strong>{viewLearner.id}</strong></div>
+            <div className="adm-detail-row"><span>Họ và tên</span><strong>{viewLearner.name}</strong></div>
+            <div className="adm-detail-row"><span>Email</span><strong>{viewLearner.email}</strong></div>
+            <div className="adm-detail-row"><span>Cấp bậc</span><strong>{tierMeta[viewLearner.tier]?.label || viewLearner.tier}</strong></div>
+            <div className="adm-detail-row"><span>Điểm XP</span><strong>{numberFormat.format(viewLearner.xp)} XP · {viewLearner.delta}</strong></div>
+            <div className="adm-detail-row"><span>Tiến độ</span><strong>{viewLearner.packages} gói · {viewLearner.sets} bộ đề · {viewLearner.progress}%</strong></div>
+            <div className="adm-detail-row"><span>Độ chính xác</span><strong>{decimalFormat.format(viewLearner.accuracy)}%</strong></div>
+            <div className="adm-detail-row"><span>Cập nhật gần nhất</span><strong>{viewLearner.updated}</strong></div>
+          </div>
+        </AdminFormModal>
+      ) : null}
+
+      {xpTarget ? (
+        <AdminFormModal
+          title="Điều chỉnh điểm XP"
+          subtitle={`Học viên: ${xpTarget.name} · ${xpTarget.id}`}
+          submitLabel="Lưu điểm XP"
+          onSubmit={handleXpSubmit}
+          onClose={closeLearnerModals}
+        >
+          <div className="adm-field">
+            <label htmlFor="adm-xp-value">Điểm XP mới</label>
+            <input
+              id="adm-xp-value"
+              type="number"
+              min="0"
+              className="adm-input"
+              value={xpForm.xp}
+              onChange={(event) => setXpForm((current) => ({ ...current, xp: event.target.value }))}
+              autoFocus
+            />
+            <span className="adm-field-hint">Điểm hiện tại: {numberFormat.format(xpTarget.xp)} XP.</span>
+          </div>
+          <div className="adm-field">
+            <label htmlFor="adm-xp-reason">Ghi chú / Lý do điều chỉnh</label>
+            <input
+              id="adm-xp-reason"
+              className="adm-input"
+              value={xpForm.delta}
+              onChange={(event) => setXpForm((current) => ({ ...current, delta: event.target.value }))}
+              placeholder="Ví dụ: +450 XP tuần này"
+            />
+            <span className="adm-field-hint">Mọi thay đổi XP đều được ghi vào Audit Log theo quy chế.</span>
+          </div>
+        </AdminFormModal>
+      ) : null}
 
       {toast ? (
         <div className="adm-toast" role="status">

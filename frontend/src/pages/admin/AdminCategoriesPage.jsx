@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
+import AdminFormModal from "./AdminFormModal.jsx";
 import "./AdminCategories.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -94,6 +95,21 @@ const sortOptions = [
 const statusMeta = {
   active: { label: "Đang hoạt động", badge: "is-open" },
   inactive: { label: "Tạm ẩn", badge: "is-inactive" }
+};
+
+const toneOptions = [
+  { value: "amber", label: "Hổ phách" },
+  { value: "violet", label: "Tím" },
+  { value: "green", label: "Lục" },
+  { value: "blue", label: "Lam" },
+  { value: "purple", label: "Tím đậm" }
+];
+
+const emptyCategoryForm = {
+  name: "",
+  description: "",
+  status: "active",
+  tone: "amber"
 };
 
 const initialCategories = [
@@ -179,6 +195,9 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
   const [toast, setToast] = useState("");
   const [categories, setCategories] = useState(initialCategories);
   const toastTimer = useRef(null);
+  const [categoryModal, setCategoryModal] = useState(null); // "create" | "edit" | null
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [form, setForm] = useState(emptyCategoryForm);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
@@ -216,8 +235,68 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
     return sorted;
   }, [categories, query, statusFilter, sortOrder]);
 
+  function updateForm(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function openCreateCategory() {
+    setActiveCategory(null);
+    setForm(emptyCategoryForm);
+    setCategoryModal("create");
+  }
+
   function handleEditCategory(row) {
-    showToast(`Chỉnh sửa chủ đề “${row.name}” sẽ có ở bước nối API.`);
+    setActiveCategory(row);
+    setForm({
+      name: row.name,
+      description: row.description,
+      status: row.status,
+      tone: row.tone
+    });
+    setCategoryModal("edit");
+  }
+
+  function closeCategoryModal() {
+    setCategoryModal(null);
+    setActiveCategory(null);
+  }
+
+  function handleCategorySubmit(event) {
+    event.preventDefault();
+    const name = form.name.trim();
+    if (!name) {
+      showToast("Vui lòng nhập tên chủ đề trước khi lưu.");
+      return;
+    }
+
+    const now = new Date();
+    const updatedAt = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const sortDate = now.toISOString().slice(0, 10);
+    const payload = {
+      name,
+      description: form.description.trim() || "Chưa có mô tả cho chủ đề này.",
+      status: form.status,
+      tone: form.tone,
+      updatedAt: "Vừa xong",
+      sortDate
+    };
+
+    if (categoryModal === "edit" && activeCategory) {
+      setCategories((current) => current.map((row) => (row.id === activeCategory.id
+        ? { ...row, ...payload }
+        : row)));
+      showToast(`Đã cập nhật chủ đề “${name}” (dữ liệu mẫu).`);
+    } else {
+      setCategories((current) => [{
+        id: `cat-${Date.now()}`,
+        icon: FolderTree,
+        packageCount: 0,
+        questionCount: 0,
+        ...payload
+      }, ...current]);
+      showToast(`Đã tạo chủ đề “${name}” (dữ liệu mẫu, chưa lưu máy chủ).`);
+    }
+    closeCategoryModal();
   }
 
   function handleDeleteCategory(row) {
@@ -343,7 +422,7 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
           <button
             type="button"
             className="adm-primary"
-            onClick={() => showToast("Biểu mẫu tạo chủ đề mới sẽ được nối API ở bước tiếp theo.")}
+            onClick={openCreateCategory}
           >
             <Plus size={16} /> Tạo chủ đề mới
           </button>
@@ -472,6 +551,69 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
           </div>
         </div>
       </section>
+
+      {categoryModal ? (
+        <AdminFormModal
+          title={categoryModal === "edit" ? "Chỉnh sửa chủ đề" : "Tạo chủ đề mới"}
+          subtitle="Giao diện mẫu — dữ liệu chưa được lưu lên máy chủ."
+          size="lg"
+          submitLabel={categoryModal === "edit" ? "Lưu thay đổi" : "Tạo chủ đề ngay"}
+          onSubmit={handleCategorySubmit}
+          onClose={closeCategoryModal}
+        >
+          <div className="adm-field">
+            <label htmlFor="adm-cat-name">Tên chủ đề / thời kỳ</label>
+            <input
+              id="adm-cat-name"
+              className="adm-input"
+              value={form.name}
+              onChange={(event) => updateForm("name", event.target.value)}
+              placeholder="Ví dụ: Kháng chiến chống Pháp (1945 - 1954)"
+              autoFocus
+            />
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-cat-description">Mô tả chủ đề</label>
+            <textarea
+              id="adm-cat-description"
+              className="adm-textarea"
+              value={form.description}
+              onChange={(event) => updateForm("description", event.target.value)}
+              placeholder="Tóm tắt phạm vi thời kỳ, sự kiện trọng tâm của chủ đề..."
+            />
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-cat-status">Trạng thái</label>
+              <select
+                id="adm-cat-status"
+                className="adm-select"
+                value={form.status}
+                onChange={(event) => updateForm("status", event.target.value)}
+              >
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Tạm ẩn</option>
+              </select>
+              <span className="adm-field-hint">Chủ đề tạm ẩn sẽ không hiển thị ở cổng học tập.</span>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-cat-tone">Màu biểu tượng</label>
+              <select
+                id="adm-cat-tone"
+                className="adm-select"
+                value={form.tone}
+                onChange={(event) => updateForm("tone", event.target.value)}
+              >
+                {toneOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </AdminFormModal>
+      ) : null}
 
       {toast ? (
         <div className="adm-toast" role="status">

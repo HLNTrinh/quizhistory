@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import AdminConsoleLayout, { buildInitials } from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
+import AdminFormModal from "./AdminFormModal.jsx";
 import "./AdminUsers.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -159,6 +160,9 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
   const [unreadCount, setUnreadCount] = useState(3);
   const [toast, setToast] = useState("");
   const toastTimer = useRef(null);
+  const [userModal, setUserModal] = useState(null); // "create" | "edit" | "view" | null
+  const [activeUser, setActiveUser] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", role: "student", status: "active", subtitle: "" });
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
@@ -194,6 +198,77 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
     showToast(target && target.status === "locked"
       ? `Đã mở khóa tài khoản ${target.name}.`
       : `Đã tạm khóa tài khoản ${target ? target.name : ""}.`);
+  }
+
+  const ROLE_LABELS = { student: "Học viên", editor: "Biên tập viên sử học", admin: "Quản trị viên" };
+  const ROLE_TONES = { student: "violet", editor: "amber", admin: "amber" };
+
+  function updateForm(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function openCreateUser() {
+    setActiveUser(null);
+    setForm({ name: "", email: "", role: "student", status: "active", subtitle: "" });
+    setUserModal("create");
+  }
+
+  function openEditUser(row) {
+    setActiveUser(row);
+    setForm({ name: row.name, email: row.email, role: row.role, status: row.status, subtitle: row.subtitle });
+    setUserModal("edit");
+  }
+
+  function openViewUser(row) {
+    setActiveUser(row);
+    setUserModal("view");
+  }
+
+  function closeUserModal() {
+    setUserModal(null);
+    setActiveUser(null);
+  }
+
+  function handleUserSubmit(event) {
+    event.preventDefault();
+    const name = form.name.trim();
+    const email = form.email.trim();
+    if (!name) {
+      showToast("Vui lòng nhập họ tên người dùng trước khi lưu.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast("Email liên kết chưa đúng định dạng.");
+      return;
+    }
+
+    const roleLabel = ROLE_LABELS[form.role] || "Học viên";
+    const roleTone = ROLE_TONES[form.role] || "violet";
+    const subtitle = form.subtitle.trim()
+      || (form.status === "locked" ? "Lý do: Tạm khóa bởi quản trị viên" : "Thành viên mới");
+
+    if (userModal === "edit" && activeUser) {
+      setUsers((current) => current.map((row) => (row.id === activeUser.id
+        ? { ...row, name, email, role: form.role, roleLabel, roleTone, subtitle, status: form.status }
+        : row)));
+      showToast(`Đã cập nhật người dùng “${name}” (dữ liệu mẫu).`);
+    } else {
+      setUsers((current) => [{
+        id: `u-${Date.now()}`,
+        name,
+        email,
+        role: form.role,
+        roleLabel,
+        roleTone,
+        subtitle,
+        avatarTone: form.role === "student" ? "violet" : "amber",
+        progress: { label: "0 Gói hoàn thành", percent: 0, tag: "0 XP", tone: "muted", color: "#cbd0e4" },
+        joined: new Date().toLocaleDateString("vi-VN"),
+        status: form.status
+      }, ...current]);
+      showToast(`Đã thêm người dùng “${name}” (dữ liệu mẫu).`);
+    }
+    closeUserModal();
   }
 
   const filteredUsers = useMemo(() => {
@@ -308,7 +383,7 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
           <button
             type="button"
             className="adm-primary"
-            onClick={() => showToast("Biểu mẫu thêm người dùng sẽ được nối API ở bước tiếp theo.")}
+            onClick={openCreateUser}
           >
             <UserPlus size={16} /> Thêm người dùng mới
           </button>
@@ -380,7 +455,7 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
                         <button
                           type="button"
                           className="adm-eye-btn"
-                          onClick={() => showToast(`Xem hồ sơ của ${row.name} (dữ liệu mẫu).`)}
+                          onClick={() => openViewUser(row)}
                           aria-label={`Xem hồ sơ ${row.name}`}
                         >
                           <Eye size={15} />
@@ -390,7 +465,7 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
                             <button
                               type="button"
                               className="adm-eye-btn"
-                              onClick={() => showToast(`Chỉnh sửa vai trò của ${row.name} sẽ có ở bước nối API.`)}
+                              onClick={() => openEditUser(row)}
                               aria-label={`Chỉnh sửa ${row.name}`}
                             >
                               <Pencil size={15} />
@@ -463,6 +538,107 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
         </div>
       </section>
 
+
+      {userModal === "view" && activeUser ? (
+        <AdminFormModal
+          title={`Hồ sơ: ${activeUser.name}`}
+          subtitle="Thông tin tham khảo — dữ liệu mẫu, chưa nối API."
+          size="lg"
+          onClose={closeUserModal}
+          footer={
+            <>
+              <button type="button" className="adm-ghost" onClick={closeUserModal}>Đóng</button>
+              <button type="button" className="adm-primary" onClick={() => openEditUser(activeUser)}>Chỉnh sửa</button>
+            </>
+          }
+        >
+          <div className="adm-detail">
+            <div className="adm-detail-row"><span>Họ và tên</span><strong>{activeUser.name}</strong></div>
+            <div className="adm-detail-row"><span>Email liên kết</span><strong>{activeUser.email}</strong></div>
+            <div className="adm-detail-row"><span>Vai trò</span><strong>{activeUser.roleLabel}</strong></div>
+            <div className="adm-detail-row"><span>Trạng thái</span><strong>{activeUser.status === "active" ? "Đang hoạt động" : "Đang tạm khóa"}</strong></div>
+            <div className="adm-detail-row"><span>Tiến độ học tập</span><strong>{activeUser.progress.label} · {activeUser.progress.tag}</strong></div>
+            <div className="adm-detail-row"><span>Ngày tham gia</span><strong>{activeUser.joined}</strong></div>
+            <div className="adm-detail-row"><span>Ghi chú</span><strong>{activeUser.subtitle}</strong></div>
+          </div>
+        </AdminFormModal>
+      ) : null}
+
+      {userModal === "create" || userModal === "edit" ? (
+        <AdminFormModal
+          title={userModal === "edit" ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"}
+          subtitle="Giao diện mẫu — thông tin chưa được lưu lên máy chủ."
+          size="lg"
+          submitLabel={userModal === "edit" ? "Lưu thay đổi" : "Thêm người dùng"}
+          onSubmit={handleUserSubmit}
+          onClose={closeUserModal}
+        >
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-user-name">Họ và tên</label>
+              <input
+                id="adm-user-name"
+                className="adm-input"
+                value={form.name}
+                onChange={(event) => updateForm("name", event.target.value)}
+                placeholder="Ví dụ: Nguyễn Minh Quân"
+                autoFocus
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-user-email">Email liên kết</label>
+              <input
+                id="adm-user-email"
+                type="email"
+                className="adm-input"
+                value={form.email}
+                onChange={(event) => updateForm("email", event.target.value)}
+                placeholder="vidu@email.com"
+              />
+            </div>
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-user-role">Vai trò</label>
+              <select
+                id="adm-user-role"
+                className="adm-select"
+                value={form.role}
+                onChange={(event) => updateForm("role", event.target.value)}
+              >
+                <option value="student">Học viên</option>
+                <option value="editor">Biên tập viên sử học</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-user-status">Trạng thái</label>
+              <select
+                id="adm-user-status"
+                className="adm-select"
+                value={form.status}
+                onChange={(event) => updateForm("status", event.target.value)}
+              >
+                <option value="active">Đang hoạt động</option>
+                <option value="locked">Tạm khóa</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-user-subtitle">Chức danh / Ghi chú</label>
+            <input
+              id="adm-user-subtitle"
+              className="adm-input"
+              value={form.subtitle}
+              onChange={(event) => updateForm("subtitle", event.target.value)}
+              placeholder="Ví dụ: Top 1 Quân sự Việt"
+            />
+            <span className="adm-field-hint">Dòng mô tả hiển thị dưới tên người dùng trong danh sách.</span>
+          </div>
+        </AdminFormModal>
+      ) : null}
 
       {toast ? (
         <div className="adm-toast" role="status">

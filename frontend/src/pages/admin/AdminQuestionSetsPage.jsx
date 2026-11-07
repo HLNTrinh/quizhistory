@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
+import AdminFormModal from "./AdminFormModal.jsx";
 import "./AdminQuestionSets.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -100,6 +101,26 @@ const difficultyMeta = {
   easy: { label: "Cơ bản", tone: "green", rank: 1 },
   medium: { label: "Trung bình", tone: "amber", rank: 2 },
   hard: { label: "Nâng cao", tone: "violet", rank: 3 }
+};
+
+const questionTypeOptions = [
+  { value: "Trắc nghiệm", label: "Trắc nghiệm" },
+  { value: "Điền khuyết", label: "Điền khuyết" },
+  { value: "Đúng / Sai", label: "Đúng / Sai" }
+];
+
+const emptySetForm = {
+  order: "",
+  legCode: "",
+  name: "",
+  description: "",
+  parentPackage: CURRENT_PACKAGE,
+  term: "Kỳ 1954",
+  unlock: "Hoàn thành chặng trước (≥ 80% điểm)",
+  difficulty: "medium",
+  questionCount: "10",
+  questionType: "Trắc nghiệm",
+  status: "draft"
 };
 
 const initialQuestionSets = [
@@ -234,6 +255,9 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
   const [toast, setToast] = useState("");
   const [questionSets, setQuestionSets] = useState(initialQuestionSets);
   const toastTimer = useRef(null);
+  const [setModal, setSetModal] = useState(null); // "create" | "edit" | null
+  const [activeSet, setActiveSet] = useState(null);
+  const [form, setForm] = useState(emptySetForm);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
@@ -273,8 +297,79 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
     return sorted;
   }, [questionSets, query, difficultyFilter, statusFilter, sortOrder]);
 
+  function updateForm(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function openCreateSet() {
+    const nextOrder = questionSets.reduce((max, row) => Math.max(max, row.order), 0) + 1;
+    setActiveSet(null);
+    setForm({
+      ...emptySetForm,
+      order: String(nextOrder),
+      legCode: `DBP-STG-${String(nextOrder).padStart(2, "0")}`
+    });
+    setSetModal("create");
+  }
+
   function handleEditSet(row) {
-    showToast(`Chỉnh sửa bộ “${row.name}” sẽ có ở bước nối API.`);
+    setActiveSet(row);
+    setForm({
+      order: String(row.order),
+      legCode: row.legCode,
+      name: row.name,
+      description: row.description,
+      parentPackage: row.parentPackage,
+      term: row.term,
+      unlock: row.unlock,
+      difficulty: row.difficulty,
+      questionCount: String(row.questionCount),
+      questionType: row.questionType,
+      status: row.status
+    });
+    setSetModal("edit");
+  }
+
+  function closeSetModal() {
+    setSetModal(null);
+    setActiveSet(null);
+  }
+
+  function handleSetSubmit(event) {
+    event.preventDefault();
+    const name = form.name.trim();
+    if (!name) {
+      showToast("Vui lòng nhập tên bộ câu hỏi trước khi lưu.");
+      return;
+    }
+
+    const order = Number(form.order) || questionSets.length + 1;
+    const legCode = form.legCode.trim() || `DBP-STG-${String(order).padStart(2, "0")}`;
+    const payload = {
+      order,
+      legCode,
+      name,
+      description: form.description.trim() || "Chưa có mô tả cho bộ câu hỏi này.",
+      parentPackage: form.parentPackage,
+      term: form.term.trim() || "Kỳ 1954",
+      unlock: form.unlock.trim() || "Mở tự động",
+      difficulty: form.difficulty,
+      questionCount: Number(form.questionCount) || 0,
+      questionType: form.questionType,
+      status: form.status,
+      sortDate: new Date().toISOString().slice(0, 10)
+    };
+
+    if (setModal === "edit" && activeSet) {
+      setQuestionSets((current) => current.map((row) => (row.id === activeSet.id
+        ? { ...row, ...payload }
+        : row)));
+      showToast(`Đã cập nhật bộ “${name}” (dữ liệu mẫu).`);
+    } else {
+      setQuestionSets((current) => [{ id: `qs-${Date.now()}`, ...payload }, ...current]);
+      showToast(`Đã tạo bộ “${name}” (dữ liệu mẫu, chưa lưu máy chủ).`);
+    }
+    closeSetModal();
   }
 
   function handleDeleteSet(row) {
@@ -400,7 +495,7 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
           <button
             type="button"
             className="adm-primary"
-            onClick={() => showToast("Biểu mẫu tạo bộ câu hỏi sẽ được nối API ở bước tiếp theo.")}
+            onClick={openCreateSet}
           >
             <Plus size={16} /> Tạo bộ câu hỏi mới
           </button>
@@ -524,6 +619,152 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
           </div>
         </div>
       </section>
+
+      {setModal ? (
+        <AdminFormModal
+          title={setModal === "edit" ? "Chỉnh sửa bộ câu hỏi" : "Tạo bộ câu hỏi mới"}
+          subtitle="Giao diện mẫu — dữ liệu chưa được lưu lên máy chủ."
+          size="lg"
+          submitLabel={setModal === "edit" ? "Lưu thay đổi" : "Tạo bộ ngay"}
+          onSubmit={handleSetSubmit}
+          onClose={closeSetModal}
+        >
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-set-order">Thứ tự chặng</label>
+              <input
+                id="adm-set-order"
+                type="number"
+                min="1"
+                className="adm-input"
+                value={form.order}
+                onChange={(event) => updateForm("order", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-set-code">Mã chặng</label>
+              <input
+                id="adm-set-code"
+                className="adm-input"
+                value={form.legCode}
+                onChange={(event) => updateForm("legCode", event.target.value)}
+                placeholder="Ví dụ: DBP-STG-09"
+              />
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-set-name">Tên bộ câu hỏi</label>
+            <input
+              id="adm-set-name"
+              className="adm-input"
+              value={form.name}
+              onChange={(event) => updateForm("name", event.target.value)}
+              placeholder="Ví dụ: Tiêu diệt cụm cứ điểm Him Lam"
+              autoFocus
+            />
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-set-description">Mô tả tóm tắt</label>
+            <textarea
+              id="adm-set-description"
+              className="adm-textarea"
+              value={form.description}
+              onChange={(event) => updateForm("description", event.target.value)}
+              placeholder="Tóm tắt nội dung trọng tâm của bộ câu hỏi..."
+            />
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-set-package">Gói cha</label>
+              <input
+                id="adm-set-package"
+                className="adm-input"
+                value={form.parentPackage}
+                onChange={(event) => updateForm("parentPackage", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-set-term">Học kỳ / Giai đoạn</label>
+              <input
+                id="adm-set-term"
+                className="adm-input"
+                value={form.term}
+                onChange={(event) => updateForm("term", event.target.value)}
+                placeholder="Ví dụ: Kỳ 1954"
+              />
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-set-unlock">Điều kiện mở khóa</label>
+            <input
+              id="adm-set-unlock"
+              className="adm-input"
+              value={form.unlock}
+              onChange={(event) => updateForm("unlock", event.target.value)}
+              placeholder="Ví dụ: Hoàn thành Bộ #06 (≥ 80% điểm)"
+            />
+            <span className="adm-field-hint">Bộ câu hỏi tuân theo luồng mở khóa tuần tự của gói.</span>
+          </div>
+
+          <div className="adm-field-row is-3">
+            <div className="adm-field">
+              <label htmlFor="adm-set-difficulty">Độ khó</label>
+              <select
+                id="adm-set-difficulty"
+                className="adm-select"
+                value={form.difficulty}
+                onChange={(event) => updateForm("difficulty", event.target.value)}
+              >
+                <option value="easy">Cơ bản</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Nâng cao</option>
+              </select>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-set-count">Số câu hỏi</label>
+              <input
+                id="adm-set-count"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.questionCount}
+                onChange={(event) => updateForm("questionCount", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-set-type">Loại câu hỏi</label>
+              <select
+                id="adm-set-type"
+                className="adm-select"
+                value={form.questionType}
+                onChange={(event) => updateForm("questionType", event.target.value)}
+              >
+                {questionTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-set-status">Trạng thái</label>
+            <select
+              id="adm-set-status"
+              className="adm-select"
+              value={form.status}
+              onChange={(event) => updateForm("status", event.target.value)}
+            >
+              <option value="open">Đang mở</option>
+              <option value="draft">Bản nháp</option>
+              <option value="locked">Tạm khóa</option>
+            </select>
+          </div>
+        </AdminFormModal>
+      ) : null}
 
       {toast ? (
         <div className="adm-toast" role="status">

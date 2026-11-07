@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
+import AdminFormModal from "./AdminFormModal.jsx";
 import "./AdminQuestions.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -98,6 +99,25 @@ const difficultyMeta = {
   easy: { label: "Cơ bản", tone: "green" },
   medium: { label: "Trung bình", tone: "amber" },
   hard: { label: "Nâng cao", tone: "red" }
+};
+
+const questionTypeChoices = [
+  "Trắc nghiệm (4 lựa chọn)",
+  "Điền khuyết",
+  "Đúng / Sai"
+];
+
+const answerLetters = ["A", "B", "C", "D"];
+
+const emptyQuestionForm = {
+  content: "",
+  type: "Trắc nghiệm (4 lựa chọn)",
+  topic: "Kháng chiến chống Pháp",
+  difficulty: "medium",
+  setName: "none",
+  answerLetter: "A",
+  answerText: "",
+  verified: false
 };
 
 const initialQuestions = [
@@ -178,6 +198,9 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
   const [toast, setToast] = useState("");
   const [questions, setQuestions] = useState(initialQuestions);
   const toastTimer = useRef(null);
+  const [questionModal, setQuestionModal] = useState(null); // "create" | "edit" | null
+  const [activeQuestion, setActiveQuestion] = useState(null);
+  const [form, setForm] = useState(emptyQuestionForm);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
@@ -216,8 +239,75 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
     });
   }, [questions, query, topicFilter, difficultyFilter, setFilter]);
 
+  function updateForm(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function openCreateQuestion() {
+    setActiveQuestion(null);
+    setForm(emptyQuestionForm);
+    setQuestionModal("create");
+  }
+
   function handleEditQuestion(row) {
-    showToast(`Chỉnh sửa câu hỏi ${row.code} sẽ có ở bước nối API.`);
+    setActiveQuestion(row);
+    setForm({
+      content: row.content,
+      type: row.type,
+      topic: row.topic,
+      difficulty: row.difficulty,
+      setName: row.setName || "none",
+      answerLetter: row.answer.letter,
+      answerText: row.answer.text,
+      verified: row.answer.verified
+    });
+    setQuestionModal("edit");
+  }
+
+  function closeQuestionModal() {
+    setQuestionModal(null);
+    setActiveQuestion(null);
+  }
+
+  function handleQuestionSubmit(event) {
+    event.preventDefault();
+    const content = form.content.trim();
+    if (!content) {
+      showToast("Vui lòng nhập nội dung câu hỏi trước khi lưu.");
+      return;
+    }
+
+    const now = new Date();
+    const updatedAt = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+    const payload = {
+      type: form.type,
+      content,
+      topic: form.topic,
+      difficulty: form.difficulty,
+      setName: form.setName === "none" ? null : form.setName,
+      answer: {
+        letter: form.answerLetter,
+        text: form.answerText.trim() || "Chưa cập nhật đáp án",
+        verified: Boolean(form.verified)
+      },
+      updatedAt
+    };
+
+    if (questionModal === "edit" && activeQuestion) {
+      setQuestions((current) => current.map((row) => (row.id === activeQuestion.id
+        ? { ...row, ...payload }
+        : row)));
+      showToast(`Đã cập nhật câu hỏi ${activeQuestion.code} (dữ liệu mẫu).`);
+    } else {
+      const nextId = questions.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0) + 1;
+      setQuestions((current) => [{
+        id: String(nextId),
+        code: `#Q-${nextId}`,
+        ...payload
+      }, ...current]);
+      showToast(`Đã thêm câu hỏi #Q-${nextId} (dữ liệu mẫu, chưa lưu máy chủ).`);
+    }
+    closeQuestionModal();
   }
 
   function handleDeleteQuestion(row) {
@@ -336,7 +426,7 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
           <button
             type="button"
             className="adm-primary"
-            onClick={() => showToast("Biểu mẫu thêm câu hỏi sẽ được nối API ở bước tiếp theo.")}
+            onClick={openCreateQuestion}
           >
             <Plus size={16} /> Thêm câu hỏi mới
           </button>
@@ -465,6 +555,127 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
           </div>
         </div>
       </section>
+
+      {questionModal ? (
+        <AdminFormModal
+          title={questionModal === "edit" ? "Chỉnh sửa câu hỏi" : "Thêm câu hỏi mới"}
+          subtitle="Giao diện mẫu — dữ liệu chưa được lưu lên máy chủ."
+          size="lg"
+          submitLabel={questionModal === "edit" ? "Lưu thay đổi" : "Thêm câu hỏi"}
+          onSubmit={handleQuestionSubmit}
+          onClose={closeQuestionModal}
+        >
+          <div className="adm-field">
+            <label htmlFor="adm-q-content">Nội dung câu hỏi</label>
+            <textarea
+              id="adm-q-content"
+              className="adm-textarea"
+              value={form.content}
+              onChange={(event) => updateForm("content", event.target.value)}
+              placeholder="Ví dụ: Chiến dịch Điện Biên Phủ diễn ra trong bao nhiêu ngày đêm?"
+              autoFocus
+            />
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-q-type">Loại câu hỏi</label>
+              <select
+                id="adm-q-type"
+                className="adm-select"
+                value={form.type}
+                onChange={(event) => updateForm("type", event.target.value)}
+              >
+                {questionTypeChoices.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-q-topic">Chủ đề lịch sử</label>
+              <select
+                id="adm-q-topic"
+                className="adm-select"
+                value={form.topic}
+                onChange={(event) => updateForm("topic", event.target.value)}
+              >
+                {topicOptions.filter((option) => option.value !== "all").map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-q-difficulty">Độ khó</label>
+              <select
+                id="adm-q-difficulty"
+                className="adm-select"
+                value={form.difficulty}
+                onChange={(event) => updateForm("difficulty", event.target.value)}
+              >
+                <option value="easy">Cơ bản</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Nâng cao</option>
+              </select>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-q-set">Bộ đề sử dụng</label>
+              <select
+                id="adm-q-set"
+                className="adm-select"
+                value={form.setName}
+                onChange={(event) => updateForm("setName", event.target.value)}
+              >
+                {setOptions.filter((option) => option.value !== "all").map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="adm-form-section">
+            <strong>Đáp án đúng</strong>
+            <small>Dùng để chấm điểm tự động khi học viên làm bài.</small>
+          </div>
+
+          <div className="adm-field-row">
+            <div className="adm-field">
+              <label htmlFor="adm-q-letter">Phương án</label>
+              <select
+                id="adm-q-letter"
+                className="adm-select"
+                value={form.answerLetter}
+                onChange={(event) => updateForm("answerLetter", event.target.value)}
+              >
+                {answerLetters.map((letter) => (
+                  <option key={letter} value={letter}>{letter}</option>
+                ))}
+              </select>
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-q-answer">Nội dung đáp án</label>
+              <input
+                id="adm-q-answer"
+                className="adm-input"
+                value={form.answerText}
+                onChange={(event) => updateForm("answerText", event.target.value)}
+                placeholder="Ví dụ: 56 ngày đêm"
+              />
+            </div>
+          </div>
+
+          <label className="adm-check">
+            <input
+              type="checkbox"
+              checked={form.verified}
+              onChange={(event) => updateForm("verified", event.target.checked)}
+            />
+            Đáp án đã được biên tập viên thẩm định
+          </label>
+        </AdminFormModal>
+      ) : null}
 
       {toast ? (
         <div className="adm-toast" role="status">
