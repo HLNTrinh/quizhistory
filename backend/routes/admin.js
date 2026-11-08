@@ -12,6 +12,12 @@ import {
   adminUpdateUser,
   adminUsers
 } from "../app/Controllers/AdminUserController.js";
+import {
+  adminCreatePackage,
+  adminDeletePackage,
+  adminPackages,
+  adminUpdatePackage
+} from "../app/Controllers/AdminPackageController.js";
 import { requireAdmin } from "../app/Middleware/requireAuth.js";
 import { createRateLimiter } from "../app/Middleware/rateLimit.js";
 
@@ -40,5 +46,11 @@ router.get("/categories", requireAdmin, adminCategories);
 router.post("/categories", requireAdmin, adminCreateCategory);
 router.patch("/categories/:id", requireAdmin, adminUpdateCategory);
 router.delete("/categories/:id", requireAdmin, adminDeleteCategory);
+
+// Quản lý gói câu hỏi
+router.get("/packages", requireAdmin, adminPackages);
+router.post("/packages", requireAdmin, adminCreatePackage);
+router.patch("/packages/:id", requireAdmin, adminUpdatePackage);
+router.delete("/packages/:id", requireAdmin, adminDeletePackage);
 
 export default router;

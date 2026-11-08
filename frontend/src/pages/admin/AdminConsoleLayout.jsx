@@ -21,8 +21,8 @@ const consoleNav = [
   { path: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { path: "/admin/users", label: "Người dùng", icon: Users },
   { path: "/admin/categories", label: "Chủ đề", icon: FolderTree },
-  { path: "/admin/packages", label: "Gói câu hỏi", icon: Package, badge: 24 },
-  { path: "/admin/question-sets", label: "Bộ câu hỏi", icon: ClipboardList, badge: 186 },
+  { path: "/admin/packages", label: "Gói câu hỏi", icon: Package },
+  { path: "/admin/question-sets", label: "Bộ câu hỏi", icon: ClipboardList },
   { path: "/admin/questions", label: "Ngân hàng câu hỏi", icon: BookOpenCheck },
   { path: "/admin/leaderboard", label: "Bảng xếp hạng", icon: Trophy }
   // { path: "/admin/reports", label: "Thống kê", icon: FileBarChart }

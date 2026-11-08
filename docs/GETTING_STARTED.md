@@ -64,6 +64,18 @@ Trang `/admin/categories` tổng hợp số liệu thật từ `categories`, `pa
 - `POST /api/admin/categories` / `PATCH /api/admin/categories/:id` — `name` (2–120 ký tự, không trùng), `description`, `status` (`active`/`inactive`).
 - `DELETE /api/admin/categories/:id` — trả `409` nếu chủ đề còn gói câu hỏi.
 
+### Quản lý gói câu hỏi
+
+Trang `/admin/packages` đọc và ghi trực tiếp collection `packages`; số bộ đề / số câu hỏi được đếm thật từ `questionSets` và `questions`:
+
+- `GET /api/admin/packages?q=&difficulty=&status=&categoryId=&sort=&page=&limit=` — `q` tìm theo tên, mô tả và tên chủ đề; `difficulty` (`easy`/`medium`/`hard`); `status` (`draft`/`active`/`inactive`); `categoryId` (mã chủ đề hoặc `none` cho gói chưa gán chủ đề); `sort` (`newest`/`oldest`/`mostSets`/`mostXp`/`name`); phân trang mặc định 10 dòng.
+  - `stats`: `total`, `active`, `draft`, `inactive`, `openRatio`, `totalSets`, `packagesWithSets`, `setCoverage`, `totalQuestions`, `totalXp`, `averageXp`, `totalAttempts`, `completedAttempts`, `completionRate`.
+  - `items`: `id`, `name`, `description`, `image`, `difficulty`, `order`, `totalScore`, `estimatedTime`, `status`, `categoryId`, `categoryName`, `setCount`, `questionCount`, `createdAt`, `updatedAt`.
+  - `pagination`: `page`, `limit`, `total`, `totalPages`.
+- `POST /api/admin/packages` — `name` (2–120 ký tự, không trùng), `categoryId` (có thể `null`), `description`, `image`, `difficulty`, `order`, `totalScore`, `estimatedTime`, `status`.
+- `PATCH /api/admin/packages/:id` — cập nhật từng phần với cùng bộ ràng buộc; trả `409` khi đổi sang tên đã tồn tại.
+- `DELETE /api/admin/packages/:id` — trả `409` nếu gói còn bộ câu hỏi.
+
 ## API chính
 
 - `POST /api/auth/register` tạo tài khoản.
