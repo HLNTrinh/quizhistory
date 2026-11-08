@@ -298,3 +298,12 @@
   .adm-rank-chips { gap: 6px; }
   .adm-rank-tier { max-width: none; white-space: nowrap; }
 }
+
+.adm-spin {
+  animation: adm-spin 0.9s linear infinite;
+}
+
+@keyframes adm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

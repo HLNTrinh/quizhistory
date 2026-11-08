@@ -30,6 +30,10 @@ import {
   adminQuestions,
   adminUpdateQuestion
 } from "../app/Controllers/AdminQuestionController.js";
+import {
+  adminAdjustLearnerXp,
+  adminLeaderboard
+} from "../app/Controllers/AdminLeaderboardController.js";
 import { requireAdmin } from "../app/Middleware/requireAuth.js";
 import { createRateLimiter } from "../app/Middleware/rateLimit.js";
 
@@ -76,5 +80,9 @@ router.get("/questions", requireAdmin, adminQuestions);
 router.post("/questions", requireAdmin, adminCreateQuestion);
 router.patch("/questions/:id", requireAdmin, adminUpdateQuestion);
 router.delete("/questions/:id", requireAdmin, adminDeleteQuestion);
+
+// Quản trị bảng xếp hạng người học
+router.get("/leaderboard", requireAdmin, adminLeaderboard);
+router.patch("/leaderboard/:id/xp", requireAdmin, adminAdjustLearnerXp);
 
 export default router;
