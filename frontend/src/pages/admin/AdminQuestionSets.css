@@ -23,6 +23,7 @@
 .adm-qset-stat-legend i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .adm-qset-stat-legend .is-open { color: var(--adm-green); }
 .adm-qset-stat-legend .is-draft { color: var(--adm-amber); }
+.adm-qset-stat-legend .is-locked { color: var(--adm-purple); }
 
 .adm-qset-note {
   display: flex;
@@ -37,7 +38,7 @@
 .adm-qset-note svg { flex: 0 0 auto; margin-top: 1px; }
 
 /* ---------------- Bảng bộ câu hỏi ---------------- */
-.adm-table-qsets { min-width: 1220px; }
+.adm-table-qsets { min-width: 1320px; }
 .adm-table-qsets th { padding: 12px; }
 .adm-table-qsets td { padding: 14px 12px; vertical-align: middle; }
 .adm-table-qsets th:last-child,
@@ -125,6 +126,15 @@
 
 .adm-qset-unlock svg { flex: 0 0 auto; margin-top: 1px; color: #8b84d8; }
 
+.adm-qset-unlock.is-open { background: var(--adm-green-soft); color: var(--adm-green-ink); }
+.adm-qset-unlock.is-open svg { color: var(--adm-green); }
+
+/* Cột trạng thái: nhãn + số lượt làm bài */
+.adm-qset-status { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.adm-qset-status small { color: var(--adm-muted); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+
+.adm-table-qsets .adm-eye-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* Cột độ khó */
 .adm-qset-diff {
   display: inline-grid;
@@ -158,9 +168,39 @@
 
 .adm-qset-count small { color: var(--adm-muted); font-size: 10.5px; font-weight: 600; }
 
+/* ---------------- Khối ghi chú trong hộp thoại ---------------- */
+/* Trùng với AdminPackages.css; khai báo lại để trang tự đủ style khi tải riêng. */
+.adm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e6e0ff;
+  border-radius: 16px;
+  background: #f7f5ff;
+  color: #4b3fa8;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.adm-note p { margin: 0; }
+.adm-note b { color: #3b2f96; }
+
+.adm-note-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--adm-violet);
+  box-shadow: 0 4px 10px rgba(35, 31, 96, 0.08);
+}
+
 /* ---------------- Responsive ---------------- */
 @media (max-width: 1240px) {
-  .adm-table-qsets { min-width: 1140px; }
+  .adm-table-qsets { min-width: 1240px; }
   .adm-qset-name small { max-width: 240px; }
 }
 

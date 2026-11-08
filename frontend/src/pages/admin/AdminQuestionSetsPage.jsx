@@ -1,8 +1,10 @@
 // src/pages/admin/AdminQuestionSetsPage.jsx
-// Trang quản trị Bộ câu hỏi — dựng trên khung AdminConsoleLayout (sidebar + topbar + footer giống Dashboard).
-// Hiện tại là giao diện với dữ liệu mẫu, chưa gọi API.
-import { useEffect, useMemo, useRef, useState } from "react";
+// Trang quản trị Bộ câu hỏi (chặng) — dữ liệu thật từ GET /api/admin/question-sets.
+// Số câu hỏi, số lượt làm bài và độ chính xác của từng bộ được backend đếm từ
+// collection `questions` / `attempts`, không còn dữ liệu mẫu.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ArrowUpDown,
   Award,
   CheckCircle2,
@@ -13,68 +15,24 @@ import {
   Hourglass,
   Info,
   Lock,
+  LockOpen,
   Pencil,
+  Percent,
   Plus,
+  RefreshCw,
+  RotateCcw,
   Trash2,
   Workflow
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
 import AdminFormModal from "./AdminFormModal.jsx";
+import { adminApi } from "../../lib/api.js";
 import "./AdminQuestionSets.css";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
 const percentFormat = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
-
-const TOTAL_SETS = 8;
-const CURRENT_PACKAGE = "Chiến dịch Điện Biên Phủ";
-
-const questionSetStats = [
-  {
-    id: "total",
-    label: "Tổng số bộ câu hỏi",
-    value: 186,
-    unit: "Bộ",
-    icon: FolderOpen,
-    tone: "violet",
-    legend: [
-      { tone: "open", text: "172 Đang mở" },
-      { tone: "draft", text: "14 Bản nháp" }
-    ]
-  },
-  {
-    id: "avgQuestions",
-    label: "TB câu hỏi / bộ",
-    value: 10,
-    unit: "Câu",
-    icon: Hourglass,
-    tone: "amber",
-    note: "Chuẩn thời lượng 10 – 15 phút ôn",
-    noteIcon: Clock
-  },
-  {
-    id: "sequential",
-    label: "Điều kiện tuần tự",
-    value: 100,
-    unit: "%",
-    icon: Lock,
-    tone: "green",
-    pill: "Khóa tuần tự nghiêm ngặt",
-    pillTone: "green",
-    pillIcon: Lock
-  },
-  {
-    id: "passRate",
-    label: "Tỷ lệ vượt qua TB",
-    value: 82.4,
-    unit: "%",
-    icon: Award,
-    tone: "amber",
-    format: "percent",
-    note: "Học viên đạt mốc xuất sắc",
-    noteIcon: Info
-  }
-];
+const PAGE_SIZE = 10;
 
 const difficultyOptions = [
   { value: "all", label: "Tất cả độ khó" },
@@ -85,186 +43,110 @@ const difficultyOptions = [
 
 const statusOptions = [
   { value: "all", label: "Tất cả trạng thái" },
-  { value: "open", label: "Đang mở" },
+  { value: "active", label: "Đang mở" },
   { value: "draft", label: "Bản nháp" },
-  { value: "locked", label: "Tạm khóa" }
+  { value: "locked", label: "Tạm khóa" },
+  { value: "inactive", label: "Lưu trữ" }
 ];
 
 const sortOptions = [
   { value: "order", label: "Thứ tự chặng" },
   { value: "newest", label: "Mới cập nhật" },
+  { value: "oldest", label: "Cũ nhất" },
   { value: "mostQuestions", label: "Nhiều câu hỏi nhất" },
-  { value: "hardest", label: "Độ khó tăng dần" }
+  { value: "hardest", label: "Độ khó tăng dần" },
+  { value: "name", label: "Tên A → Z" }
 ];
 
 const difficultyMeta = {
-  easy: { label: "Cơ bản", tone: "green", rank: 1 },
-  medium: { label: "Trung bình", tone: "amber", rank: 2 },
-  hard: { label: "Nâng cao", tone: "violet", rank: 3 }
+  easy: { label: "Cơ bản", tone: "green" },
+  medium: { label: "Trung bình", tone: "amber" },
+  hard: { label: "Nâng cao", tone: "violet" }
 };
 
-const questionTypeOptions = [
-  { value: "Trắc nghiệm", label: "Trắc nghiệm" },
-  { value: "Điền khuyết", label: "Điền khuyết" },
-  { value: "Đúng / Sai", label: "Đúng / Sai" }
+const statusMeta = {
+  active: { label: "Đang mở", tone: "green" },
+  draft: { label: "Bản nháp", tone: "amber" },
+  locked: { label: "Tạm khóa", tone: "violet" },
+  inactive: { label: "Lưu trữ", tone: "blue" }
+};
+
+const unlockOptions = [
+  { value: "open", label: "Mở tự động (không cần chặng trước)" },
+  { value: "complete_previous_set", label: "Hoàn thành chặng trước" }
 ];
 
-const emptySetForm = {
-  order: "",
-  legCode: "",
+const EMPTY_PAGINATION = { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 };
+const EMPTY_FORM = {
+  packageId: "",
   name: "",
   description: "",
-  parentPackage: CURRENT_PACKAGE,
-  term: "Kỳ 1954",
-  unlock: "Hoàn thành chặng trước (≥ 80% điểm)",
+  order: "0",
   difficulty: "medium",
-  questionCount: "10",
-  questionType: "Trắc nghiệm",
-  status: "draft"
+  score: "0",
+  timeLimit: "0",
+  status: "draft",
+  unlockType: "open"
 };
 
-const initialQuestionSets = [
-  {
-    id: "qs-01",
-    order: 1,
-    legCode: "DBP-STG-01",
-    name: "Kéo pháo vào trận địa & Hậu cần chuẩn bị",
-    description: "Hậu cần gian khổ, mở đường huyết mạch vận chuyển lương thực, vũ khí tới trận địa.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Mở tự động (Chặng đầu)",
-    difficulty: "easy",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "open",
-    sortDate: "2026-02-14"
-  },
-  {
-    id: "qs-02",
-    order: 2,
-    legCode: "DBP-STG-02",
-    name: "Tiêu diệt cụm cứ điểm Him Lam",
-    description: "Trận mở màn đợt 1, tấm gương anh hùng Phan Đình Giót lấy thân mình lấp lỗ châu mai.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #01 (≥ 80% điểm)",
-    difficulty: "easy",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "open",
-    sortDate: "2026-02-13"
-  },
-  {
-    id: "qs-03",
-    order: 3,
-    legCode: "DBP-STG-03",
-    name: "Cứ điểm Độc Lập & Bản Kéo",
-    description: "Hạ cứ điểm Độc Lập trong đêm, bức hàng quân địch ở Bản Kéo, mở rộng khu vực kiểm soát.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #02 (≥ 80% điểm)",
-    difficulty: "medium",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "open",
-    sortDate: "2026-02-12"
-  },
-  {
-    id: "qs-04",
-    order: 4,
-    legCode: "DBP-STG-04",
-    name: "Chiến sự đồi C1 & Cắt đứt sân bay Mường Thanh",
-    description: "Giao tranh ác liệt từng tấc đất trên đồi C1, hỏa lực ta khống chế hoàn toàn sân bay địch.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #03 (≥ 80% điểm)",
-    difficulty: "medium",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "open",
-    sortDate: "2026-02-11"
-  },
-  {
-    id: "qs-05",
-    order: 5,
-    legCode: "DBP-STG-05",
-    name: "Đợt tổng công kích tiêu diệt tập đoàn cứ điểm",
-    description: "Khối bộc phá nghìn cân phát nổ tại đồi A1, mở màn đợt công kích cuối cùng của chiến dịch.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #04 (≥ 80% điểm)",
-    difficulty: "hard",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "open",
-    sortDate: "2026-02-10"
-  },
-  {
-    id: "qs-06",
-    order: 6,
-    legCode: "DBP-STG-06",
-    name: "Bắt sống tướng De Castries & Toàn thắng Điện Biên",
-    description: "Lá cờ quyết chiến quyết thắng tung bay trên hầm tướng địch, kết thúc thắng lợi chiến dịch.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #05 (≥ 80% điểm)",
-    difficulty: "hard",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "open",
-    sortDate: "2026-02-09"
-  },
-  {
-    id: "qs-07",
-    order: 7,
-    legCode: "DBP-STG-07",
-    name: "Hiệp định Genève & Rút quân tập kết",
-    description: "Những điều khoản cơ bản của Hiệp định Genève 1954 và công cuộc chuyển quân tập kết.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #06 (≥ 80% điểm)",
-    difficulty: "medium",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "draft",
-    sortDate: "2026-02-08"
-  },
-  {
-    id: "qs-08",
-    order: 8,
-    legCode: "DBP-STG-08",
-    name: "Tổng kết chiến dịch & Bài học lịch sử",
-    description: "Ý nghĩa lịch sử, nguyên nhân thắng lợi và bài học kinh nghiệm của chiến thắng Điện Biên Phủ.",
-    parentPackage: CURRENT_PACKAGE,
-    term: "Kỳ 1954",
-    unlock: "Hoàn thành Bộ #07 (≥ 80% điểm)",
-    difficulty: "hard",
-    questionCount: 10,
-    questionType: "Trắc nghiệm",
-    status: "locked",
-    sortDate: "2026-02-07"
-  }
-];
+function formatShortDate(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  const now = new Date();
+  const options = { day: "2-digit", month: "2-digit" };
+  if (date.getFullYear() !== now.getFullYear()) options.year = "numeric";
+  return new Intl.DateTimeFormat("vi-VN", options).format(date);
+}
+
+function buildPageList(current, totalPages) {
+  const total = Math.max(1, totalPages);
+  const start = Math.max(1, Math.min(current - 2, total - 4));
+  const list = [];
+  for (let page = start; page < start + 5 && page <= total; page += 1) list.push(page);
+  return list;
+}
+
+function describeUnlock(unlockType) {
+  return unlockType === "complete_previous_set"
+    ? "Hoàn thành chặng trước"
+    : "Mở tự động";
+}
 
 export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
+  const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [pagination, setPagination] = useState(EMPTY_PAGINATION);
+  const [loadState, setLoadState] = useState("loading");
+  const [loadError, setLoadError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [packageFilter, setPackageFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("order");
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [page, setPage] = useState(1);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [toast, setToast] = useState("");
-  const [questionSets, setQuestionSets] = useState(initialQuestionSets);
-  const toastTimer = useRef(null);
+  const [packageOptions, setPackageOptions] = useState([]);
   const [setModal, setSetModal] = useState(null); // "create" | "edit" | null
   const [activeSet, setActiveSet] = useState(null);
-  const [form, setForm] = useState(emptySetForm);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const toastTimer = useRef(null);
+  const requestRef = useRef(null);
+  const hasDataRef = useRef(false);
 
-  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+  useEffect(() => () => {
+    window.clearTimeout(toastTimer.current);
+    requestRef.current?.abort();
+  }, []);
 
   function showToast(message) {
     setToast(message);
     window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(""), 3200);
+    toastTimer.current = window.setTimeout(() => setToast(""), 3600);
   }
 
   function handleBellClick() {
@@ -272,42 +154,95 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
     showToast("Đã đánh dấu toàn bộ thông báo là đã đọc.");
   }
 
-  const filteredSets = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    const rows = questionSets.filter((row) => {
-      const matchKeyword = !keyword
-        || row.name.toLowerCase().includes(keyword)
-        || row.description.toLowerCase().includes(keyword)
-        || row.legCode.toLowerCase().includes(keyword);
-      const matchDifficulty = difficultyFilter === "all" || row.difficulty === difficultyFilter;
-      const matchStatus = statusFilter === "all" || row.status === statusFilter;
-      return matchKeyword && matchDifficulty && matchStatus;
-    });
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+      setPage(1);
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
-    const sorted = [...rows];
-    if (sortOrder === "newest") {
-      sorted.sort((a, b) => b.sortDate.localeCompare(a.sortDate) || a.order - b.order);
-    } else if (sortOrder === "mostQuestions") {
-      sorted.sort((a, b) => b.questionCount - a.questionCount || a.order - b.order);
-    } else if (sortOrder === "hardest") {
-      sorted.sort((a, b) => difficultyMeta[b.difficulty].rank - difficultyMeta[a.difficulty].rank || a.order - b.order);
-    } else {
-      sorted.sort((a, b) => a.order - b.order);
+  // Nạp danh sách gói câu hỏi thật để chọn gói cha (bộ lọc + biểu mẫu).
+  useEffect(() => {
+    let cancelled = false;
+    adminApi("/admin/packages?page=1&limit=50&sort=name")
+      .then((payload) => {
+        if (cancelled) return;
+        setPackageOptions(Array.isArray(payload.items) ? payload.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setPackageOptions([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const loadQuestionSets = useCallback(async ({ silent = false } = {}) => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setLoadError(null);
+    if (!silent && !hasDataRef.current) setLoadState("loading");
+
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), sort: sortOrder });
+    if (debouncedQuery.trim()) params.set("q", debouncedQuery.trim());
+    if (difficultyFilter !== "all") params.set("difficulty", difficultyFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (packageFilter !== "all") params.set("packageId", packageFilter);
+
+    try {
+      const payload = await adminApi(`/admin/question-sets?${params.toString()}`, { signal: controller.signal });
+      if (controller.signal.aborted) return { ok: false };
+      hasDataRef.current = true;
+      setItems(Array.isArray(payload.items) ? payload.items : []);
+      setStats(payload.stats || null);
+      setPagination(payload.pagination || EMPTY_PAGINATION);
+      setLoadState("ready");
+      return { ok: true };
+    } catch (error) {
+      if (controller.signal.aborted) return { ok: false };
+      setLoadError(error);
+      if (!hasDataRef.current) setLoadState("error");
+      return { ok: false, error };
     }
-    return sorted;
-  }, [questionSets, query, difficultyFilter, statusFilter, sortOrder]);
+  }, [page, debouncedQuery, difficultyFilter, statusFilter, packageFilter, sortOrder]);
+
+  useEffect(() => {
+    loadQuestionSets();
+  }, [loadQuestionSets]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    const result = await loadQuestionSets();
+    setRefreshing(false);
+    if (result.ok) showToast("Đã làm mới danh sách bộ câu hỏi.");
+    else if (result.error) showToast(`Không tải được danh sách: ${result.error.message}`);
+  }
+
+  function resetFilters() {
+    setQuery("");
+    setDebouncedQuery("");
+    setDifficultyFilter("all");
+    setStatusFilter("all");
+    setPackageFilter("all");
+    setSortOrder("order");
+    setPage(1);
+    showToast("Đã đặt lại bộ lọc danh sách bộ câu hỏi.");
+  }
 
   function updateForm(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  const defaultPackageId = packageFilter !== "all"
+    ? packageFilter
+    : (packageOptions[0]?.id || "");
+
   function openCreateSet() {
-    const nextOrder = questionSets.reduce((max, row) => Math.max(max, row.order), 0) + 1;
     setActiveSet(null);
     setForm({
-      ...emptySetForm,
-      order: String(nextOrder),
-      legCode: `DBP-STG-${String(nextOrder).padStart(2, "0")}`
+      ...EMPTY_FORM,
+      packageId: defaultPackageId,
+      order: String(items.length ? Math.max(...items.map((row) => row.order)) + 1 : 1)
     });
     setSetModal("create");
   }
@@ -315,17 +250,15 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
   function handleEditSet(row) {
     setActiveSet(row);
     setForm({
-      order: String(row.order),
-      legCode: row.legCode,
+      packageId: row.packageId || "",
       name: row.name,
-      description: row.description,
-      parentPackage: row.parentPackage,
-      term: row.term,
-      unlock: row.unlock,
+      description: row.description || "",
+      order: String(row.order),
       difficulty: row.difficulty,
-      questionCount: String(row.questionCount),
-      questionType: row.questionType,
-      status: row.status
+      score: String(row.score),
+      timeLimit: String(row.timeLimit),
+      status: row.status,
+      unlockType: row.unlockType
     });
     setSetModal("edit");
   }
@@ -335,47 +268,142 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
     setActiveSet(null);
   }
 
-  function handleSetSubmit(event) {
+  async function handleSetSubmit(event) {
     event.preventDefault();
+    if (saving) return;
+
     const name = form.name.trim();
-    if (!name) {
-      showToast("Vui lòng nhập tên bộ câu hỏi trước khi lưu.");
+    if (!form.packageId) {
+      showToast("Hãy chọn gói câu hỏi (gói cha) cho bộ này.");
+      return;
+    }
+    if (name.length < 2) {
+      showToast("Vui lòng nhập tên bộ câu hỏi (ít nhất 2 ký tự).");
       return;
     }
 
-    const order = Number(form.order) || questionSets.length + 1;
-    const legCode = form.legCode.trim() || `DBP-STG-${String(order).padStart(2, "0")}`;
     const payload = {
-      order,
-      legCode,
+      packageId: form.packageId,
       name,
-      description: form.description.trim() || "Chưa có mô tả cho bộ câu hỏi này.",
-      parentPackage: form.parentPackage,
-      term: form.term.trim() || "Kỳ 1954",
-      unlock: form.unlock.trim() || "Mở tự động",
+      description: form.description.trim(),
+      order: Number(form.order) || 0,
       difficulty: form.difficulty,
-      questionCount: Number(form.questionCount) || 0,
-      questionType: form.questionType,
+      score: Number(form.score) || 0,
+      timeLimit: Number(form.timeLimit) || 0,
       status: form.status,
-      sortDate: new Date().toISOString().slice(0, 10)
+      unlockType: form.unlockType
     };
 
-    if (setModal === "edit" && activeSet) {
-      setQuestionSets((current) => current.map((row) => (row.id === activeSet.id
-        ? { ...row, ...payload }
-        : row)));
-      showToast(`Đã cập nhật bộ “${name}” (dữ liệu mẫu).`);
-    } else {
-      setQuestionSets((current) => [{ id: `qs-${Date.now()}`, ...payload }, ...current]);
-      showToast(`Đã tạo bộ “${name}” (dữ liệu mẫu, chưa lưu máy chủ).`);
+    setSaving(true);
+    try {
+      if (setModal === "edit" && activeSet) {
+        await adminApi(`/admin/question-sets/${activeSet.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload)
+        });
+        showToast(`Đã cập nhật bộ “${name}”.`);
+      } else {
+        await adminApi("/admin/question-sets", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        showToast(`Đã tạo bộ “${name}”.`);
+        setPage(1);
+      }
+      closeSetModal();
+      await loadQuestionSets({ silent: true });
+    } catch (error) {
+      showToast(error.message || "Không lưu được bộ câu hỏi.");
+    } finally {
+      setSaving(false);
     }
-    closeSetModal();
   }
 
-  function handleDeleteSet(row) {
-    setQuestionSets((current) => current.filter((item) => item.id !== row.id));
-    showToast(`Đã xóa bộ “${row.name}” (dữ liệu mẫu).`);
+  async function handleDeleteSubmit(event) {
+    event.preventDefault();
+    if (saving || !deleteTarget) return;
+
+    setSaving(true);
+    try {
+      const payload = await adminApi(`/admin/question-sets/${deleteTarget.id}`, { method: "DELETE" });
+      const deletedName = deleteTarget.name;
+      const removedQuestions = Number(payload.deletedQuestions) || 0;
+      setDeleteTarget(null);
+      showToast(removedQuestions > 0
+        ? `Đã xóa bộ “${deletedName}” cùng ${numberFormat.format(removedQuestions)} câu hỏi.`
+        : `Đã xóa bộ “${deletedName}”.`);
+      if (items.length === 1 && pagination.page > 1) setPage(pagination.page - 1);
+      else await loadQuestionSets({ silent: true });
+    } catch (error) {
+      showToast(error.message || "Không xóa được bộ câu hỏi.");
+    } finally {
+      setSaving(false);
+    }
   }
+
+  const hasFilters = Boolean(debouncedQuery.trim())
+    || difficultyFilter !== "all"
+    || statusFilter !== "all"
+    || packageFilter !== "all"
+    || sortOrder !== "order";
+
+  const startItem = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const endItem = Math.min(pagination.page * pagination.limit, pagination.total);
+  const pageList = buildPageList(pagination.page, pagination.totalPages);
+
+  const statCards = useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        id: "total",
+        label: "Tổng số bộ câu hỏi",
+        value: stats.total,
+        unit: "Bộ",
+        icon: FolderOpen,
+        tone: "violet",
+        legend: [
+          { tone: "open", text: `${numberFormat.format(stats.active)} Đang mở` },
+          { tone: "draft", text: `${numberFormat.format(stats.draft)} Nháp` },
+          { tone: "locked", text: `${numberFormat.format(stats.locked)} Tạm khóa` }
+        ]
+      },
+      {
+        id: "avgQuestions",
+        label: "TB câu hỏi / bộ",
+        value: stats.averageQuestions,
+        unit: "Câu",
+        icon: Hourglass,
+        tone: "amber",
+        note: `${numberFormat.format(stats.totalQuestions)} câu hỏi trong ${numberFormat.format(stats.setsWithQuestions)} bộ đã có nội dung`,
+        noteIcon: Clock
+      },
+      {
+        id: "sequential",
+        label: "Điều kiện tuần tự",
+        value: stats.sequentialRatio,
+        unit: "%",
+        format: "percent",
+        icon: Lock,
+        tone: "green",
+        pill: `${numberFormat.format(stats.sequentialSets)} bộ khóa theo chặng trước`,
+        pillTone: "green",
+        pillIcon: Lock
+      },
+      {
+        id: "passRate",
+        label: "Tỷ lệ vượt qua TB",
+        value: stats.passRate,
+        unit: "%",
+        format: "percent",
+        icon: Award,
+        tone: "amber",
+        note: stats.totalAttempts
+          ? `${numberFormat.format(stats.passedAttempts)}/${numberFormat.format(stats.totalAttempts)} lượt đạt ≥ ${numberFormat.format(stats.passThreshold)}%`
+          : "Chưa có lượt làm bài nào được ghi nhận",
+        noteIcon: stats.totalAttempts ? Info : Percent
+      }
+    ];
+  }, [stats]);
 
   return (
     <AdminConsoleLayout
@@ -390,7 +418,7 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
           onLogout={onLogout}
           searchValue={query}
           onSearchChange={setQuery}
-          searchPlaceholder="Tìm tên bộ, mã chặng..."
+          searchPlaceholder="Tìm tên bộ, tên gói..."
           searchLabel="Tìm kiếm bộ câu hỏi"
           unreadCount={unreadCount}
           onBellClick={handleBellClick}
@@ -398,259 +426,376 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
       }
       onFooterAction={(label) => showToast(`${label}: nội dung đang được hoàn thiện.`)}
     >
-      <div className="adm-stat-grid">
-        {questionSetStats.map((item) => {
-          const Icon = item.icon;
-          const PillIcon = item.pillIcon;
-          const NoteIcon = item.noteIcon;
-          return (
-            <article className="adm-stat" key={item.id}>
-              <div className="adm-stat-head">
-                <p className="adm-stat-label">{item.label}</p>
-                <span className={`adm-stat-icon is-${item.tone}`} aria-hidden="true">
-                  <Icon size={18} />
-                </span>
+      {loadState === "loading" && !stats ? (
+        <>
+          <div className="adm-stat-grid">
+            {[0, 1, 2, 3].map((key) => (
+              <div className="adm-stat" key={key}>
+                <div className="adm-skeleton" style={{ height: 14, width: "58%" }} />
+                <div className="adm-skeleton" style={{ height: 28, width: "45%" }} />
+                <div className="adm-skeleton" style={{ height: 12, width: "70%" }} />
               </div>
-              <p className="adm-stat-value">
-                {item.format === "percent" ? percentFormat.format(item.value) : numberFormat.format(item.value)}
-                <span>{item.unit}</span>
-              </p>
+            ))}
+          </div>
+          <div className="adm-panel adm-panel-flush">
+            <div style={{ padding: 20 }}>
+              <div className="adm-skeleton" style={{ height: 16, width: "36%" }} />
+              <div className="adm-skeleton" style={{ height: 260, marginTop: 16 }} />
+            </div>
+          </div>
+        </>
+      ) : null}
 
-              {item.legend ? (
-                <div className="adm-qset-stat-legend">
-                  {item.legend.map((entry) => (
-                    <span key={entry.text} className={`is-${entry.tone}`}>
-                      <i aria-hidden="true" />
-                      {entry.text}
+      {loadState === "error" && !stats ? (
+        <div className="adm-state-card is-error">
+          <span className="adm-state-icon"><AlertTriangle size={30} /></span>
+          <h2>Không tải được danh sách bộ câu hỏi</h2>
+          <p>
+            {loadError?.message || "Không thể kết nối đến máy chủ API quản trị."}
+            {" "}Vui lòng kiểm tra backend và kết nối cơ sở dữ liệu rồi thử lại.
+          </p>
+          <div className="adm-state-actions">
+            <button type="button" className="adm-primary" onClick={handleRefresh}>
+              <RotateCcw size={15} /> Thử tải lại ngay
+            </button>
+            {loadError?.status === 401 ? (
+              <button type="button" className="adm-ghost" onClick={onLogout}>Đăng nhập lại</button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {stats ? (
+        <>
+          <div className="adm-stat-grid">
+            {statCards.map((item) => {
+              const Icon = item.icon;
+              const PillIcon = item.pillIcon;
+              const NoteIcon = item.noteIcon;
+              return (
+                <article className="adm-stat" key={item.id}>
+                  <div className="adm-stat-head">
+                    <p className="adm-stat-label">{item.label}</p>
+                    <span className={`adm-stat-icon is-${item.tone}`} aria-hidden="true">
+                      <Icon size={18} />
                     </span>
-                  ))}
-                </div>
-              ) : null}
+                  </div>
+                  <p className="adm-stat-value">
+                    {item.format === "percent"
+                      ? percentFormat.format(item.value)
+                      : numberFormat.format(item.value)}
+                    <span>{item.unit}</span>
+                  </p>
 
-              {item.note ? (
-                <div className="adm-qset-note">
-                  {NoteIcon ? <NoteIcon size={12} aria-hidden="true" /> : null}
-                  <span>{item.note}</span>
-                </div>
-              ) : null}
+                  {item.legend ? (
+                    <div className="adm-qset-stat-legend">
+                      {item.legend.map((entry) => (
+                        <span key={entry.text} className={`is-${entry.tone}`}>
+                          <i aria-hidden="true" />
+                          {entry.text}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
 
-              {item.pill ? (
-                <div className="adm-stat-footer">
-                  <span className={`adm-pill is-${item.pillTone}`}>
-                    {PillIcon ? <PillIcon size={11} aria-hidden="true" /> : null} {item.pill}
-                  </span>
-                </div>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
+                  {item.note ? (
+                    <div className="adm-qset-note">
+                      {NoteIcon ? <NoteIcon size={12} aria-hidden="true" /> : null}
+                      <span>{item.note}</span>
+                    </div>
+                  ) : null}
 
-      <section className="adm-filter-bar is-qsets" aria-label="Bộ lọc bộ câu hỏi">
-        <select
-          className="adm-filter-select"
-          value={difficultyFilter}
-          onChange={(event) => setDifficultyFilter(event.target.value)}
-          aria-label="Lọc theo độ khó"
-        >
-          {difficultyOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
+                  {item.pill ? (
+                    <div className="adm-stat-footer">
+                      <span className={`adm-pill is-${item.pillTone}`}>
+                        {PillIcon ? <PillIcon size={11} aria-hidden="true" /> : null} {item.pill}
+                      </span>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
 
-        <select
-          className="adm-filter-select"
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          aria-label="Lọc theo trạng thái"
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-
-        <div className="adm-filter-actions">
-          <label className="adm-sort">
-            <ArrowUpDown size={15} aria-hidden="true" />
-            <span className="adm-sort-label">Sắp xếp lại thứ tự</span>
+          <section className="adm-filter-bar is-qsets" aria-label="Bộ lọc bộ câu hỏi">
             <select
-              value={sortOrder}
-              onChange={(event) => setSortOrder(event.target.value)}
-              aria-label="Sắp xếp lại thứ tự bộ câu hỏi"
+              className="adm-filter-select"
+              value={packageFilter}
+              onChange={(event) => {
+                setPackageFilter(event.target.value);
+                setPage(1);
+              }}
+              aria-label="Lọc theo gói câu hỏi"
             >
-              {sortOptions.map((option) => (
+              <option value="all">Tất cả gói câu hỏi</option>
+              {packageOptions.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </select>
+
+            <select
+              className="adm-filter-select"
+              value={difficultyFilter}
+              onChange={(event) => {
+                setDifficultyFilter(event.target.value);
+                setPage(1);
+              }}
+              aria-label="Lọc theo độ khó"
+            >
+              {difficultyOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
-          </label>
 
-          <button
-            type="button"
-            className="adm-ghost"
-            onClick={() => showToast("Kiểm tra luồng mở khóa tuần tự sẽ được nối API ở bước tiếp theo.")}
-          >
-            <Workflow size={15} /> Kiểm tra luồng mở khóa
-          </button>
+            <select
+              className="adm-filter-select"
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value);
+                setPage(1);
+              }}
+              aria-label="Lọc theo trạng thái"
+            >
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
 
-          <button
-            type="button"
-            className="adm-primary"
-            onClick={openCreateSet}
-          >
-            <Plus size={16} /> Tạo bộ câu hỏi mới
-          </button>
-        </div>
-      </section>
+            <div className="adm-filter-actions">
+              <label className="adm-sort">
+                <ArrowUpDown size={15} aria-hidden="true" />
+                <span className="adm-sort-label">Sắp xếp thứ tự</span>
+                <select
+                  value={sortOrder}
+                  onChange={(event) => {
+                    setSortOrder(event.target.value);
+                    setPage(1);
+                  }}
+                  aria-label="Sắp xếp lại thứ tự bộ câu hỏi"
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
 
-      <section className="adm-panel adm-panel-flush" aria-label="Danh sách bộ câu hỏi">
-        <div className="adm-table-wrap">
-          <table className="adm-table adm-table-qsets">
-            <thead>
-              <tr>
-                <th scope="col">Thứ tự</th>
-                <th scope="col">Tên bộ &amp; mô tả tóm tắt</th>
-                <th scope="col">Gói cha</th>
-                <th scope="col">Điều kiện mở khóa</th>
-                <th scope="col">Độ khó</th>
-                <th scope="col">Số câu</th>
-                <th scope="col">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSets.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="adm-empty-row">
-                    Không tìm thấy bộ câu hỏi phù hợp với bộ lọc hiện tại.
-                  </td>
-                </tr>
-              ) : (
-                filteredSets.map((row) => {
-                  const difficulty = difficultyMeta[row.difficulty];
-                  const orderLabel = String(row.order).padStart(2, "0");
-                  return (
-                    <tr key={row.id}>
-                      <td>
-                        <div className="adm-qset-order">
-                          <span className="adm-qset-index" aria-hidden="true">{orderLabel}</span>
-                          <span className="adm-qset-order-meta">
-                            <small>Chặng #{orderLabel}</small>
-                            <span className="adm-qset-code"># Mã: {row.legCode}</span>
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="adm-qset-name">
-                          <strong>{row.name}</strong>
-                          <small>{row.description}</small>
-                        </span>
-                      </td>
-                      <td>
-                        <span className="adm-qset-parent">
-                          <strong>{row.parentPackage}</strong>
-                          <span className="adm-qset-term">{row.term}</span>
-                        </span>
-                      </td>
-                      <td>
-                        <span className="adm-qset-unlock">
-                          <Lock size={12} aria-hidden="true" />
-                          {row.unlock}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`adm-qset-diff is-${difficulty.tone}`}>{difficulty.label}</span>
-                      </td>
-                      <td>
-                        <span className="adm-qset-count">
-                          {row.questionCount} câu
-                          <small>{row.questionType}</small>
-                        </span>
-                      </td>
-                      <td>
-                        <div className="adm-table-actions">
-                          <button
-                            type="button"
-                            className="adm-eye-btn"
-                            onClick={() => handleEditSet(row)}
-                            aria-label={`Chỉnh sửa ${row.name}`}
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="adm-eye-btn is-danger"
-                            onClick={() => handleDeleteSet(row)}
-                            aria-label={`Xóa ${row.name}`}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
+              <button
+                type="button"
+                className="adm-ghost"
+                onClick={() => showToast(stats
+                  ? `${numberFormat.format(stats.sequentialSets)}/${numberFormat.format(stats.total)} bộ đang khóa tuần tự theo chặng trước.`
+                  : "Chưa có dữ liệu luồng mở khóa.")}
+              >
+                <Workflow size={15} /> Kiểm tra luồng mở khóa
+              </button>
+
+              <button type="button" className="adm-ghost" onClick={resetFilters} disabled={!hasFilters}>
+                <RotateCcw size={15} /> Đặt lại lọc
+              </button>
+
+              <button type="button" className="adm-ghost" onClick={handleRefresh} disabled={refreshing}>
+                <RefreshCw size={15} /> {refreshing ? "Đang tải..." : "Làm mới"}
+              </button>
+
+              <button type="button" className="adm-primary" onClick={openCreateSet}>
+                <Plus size={16} /> Tạo bộ câu hỏi mới
+              </button>
+            </div>
+          </section>
+
+          <section className="adm-panel adm-panel-flush" aria-label="Danh sách bộ câu hỏi">
+            <div className="adm-table-wrap">
+              <table className="adm-table adm-table-qsets">
+                <thead>
+                  <tr>
+                    <th scope="col">Thứ tự</th>
+                    <th scope="col">Tên bộ &amp; mô tả tóm tắt</th>
+                    <th scope="col">Gói cha</th>
+                    <th scope="col">Điều kiện mở khóa</th>
+                    <th scope="col">Độ khó</th>
+                    <th scope="col">Nội dung</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="adm-empty-row">
+                        {hasFilters
+                          ? "Không tìm thấy bộ câu hỏi phù hợp với bộ lọc hiện tại."
+                          : "Chưa có bộ câu hỏi nào. Hãy tạo bộ đầu tiên cho gói câu hỏi."}
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    items.map((row) => {
+                      const difficulty = difficultyMeta[row.difficulty] || difficultyMeta.medium;
+                      const status = statusMeta[row.status] || statusMeta.active;
+                      const orderLabel = String(row.order).padStart(2, "0");
+                      const UnlockIcon = row.unlockType === "complete_previous_set" ? Lock : LockOpen;
+                      return (
+                        <tr key={row.id}>
+                          <td>
+                            <div className="adm-qset-order">
+                              <span className="adm-qset-index" aria-hidden="true">{orderLabel}</span>
+                              <span className="adm-qset-order-meta">
+                                <small>Chặng #{orderLabel}</small>
+                                <span className="adm-qset-code">Cập nhật {formatShortDate(row.updatedAt)}</span>
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="adm-qset-name">
+                              <strong>{row.name}</strong>
+                              <small>{row.description || "Chưa có mô tả cho bộ câu hỏi này."}</small>
+                            </span>
+                          </td>
+                          <td>
+                            <span className="adm-qset-parent">
+                              <strong>{row.packageName}</strong>
+                              <span className="adm-qset-term">{row.categoryName || "Chưa gán chủ đề"}</span>
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`adm-qset-unlock${row.unlockType === "open" ? " is-open" : ""}`}>
+                              <UnlockIcon size={12} aria-hidden="true" />
+                              {describeUnlock(row.unlockType)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`adm-qset-diff is-${difficulty.tone}`}>{difficulty.label}</span>
+                          </td>
+                          <td>
+                            <span className="adm-qset-count">
+                              {numberFormat.format(row.questionCount)} câu
+                              <small>
+                                {numberFormat.format(row.score)} điểm
+                                {" · "}
+                                {row.timeLimit > 0 ? `${numberFormat.format(row.timeLimit)} phút` : "không giới hạn"}
+                              </small>
+                            </span>
+                          </td>
+                          <td>
+                            <span className="adm-qset-status">
+                              <span className={`adm-pill is-${status.tone}`}>{status.label}</span>
+                              <small>
+                                {row.attemptCount > 0
+                                  ? `${numberFormat.format(row.attemptCount)} lượt · ${percentFormat.format(row.averageAccuracy)}% đúng`
+                                  : "Chưa có lượt làm bài"}
+                              </small>
+                            </span>
+                          </td>
+                          <td>
+                            <div className="adm-table-actions">
+                              <button
+                                type="button"
+                                className="adm-eye-btn"
+                                onClick={() => handleEditSet(row)}
+                                aria-label={`Chỉnh sửa ${row.name}`}
+                              >
+                                <Pencil size={15} />
+                              </button>
+                              <button
+                                type="button"
+                                className={`adm-eye-btn${row.attemptCount > 0 ? "" : " is-danger"}`}
+                                onClick={() => setDeleteTarget(row)}
+                                disabled={row.attemptCount > 0}
+                                aria-label={`Xóa ${row.name}`}
+                                title={row.attemptCount > 0
+                                  ? "Bộ đã có lượt làm bài của học viên nên không thể xóa."
+                                  : "Xóa bộ câu hỏi"}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="adm-table-foot">
-          <span>
-            Hiển thị <b>1 – {filteredSets.length}</b> trong tổng số <b>{numberFormat.format(TOTAL_SETS)}</b> bộ đề của gói hiện tại
-          </span>
-          <div className="adm-pager">
-            <button
-              type="button"
-              className="adm-pager-btn"
-              onClick={() => showToast("Bạn đang ở trang đầu tiên.")}
-              aria-label="Trang trước"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <button type="button" className="adm-pager-btn is-active" aria-current="page">1</button>
-            <button type="button" className="adm-pager-btn" onClick={() => showToast("Phân trang sẽ được nối API ở bước tiếp theo.")}>2</button>
-            <button
-              type="button"
-              className="adm-pager-btn"
-              onClick={() => showToast("Phân trang sẽ được nối API ở bước tiếp theo.")}
-              aria-label="Trang sau"
-            >
-              <ChevronRight size={15} />
-            </button>
-          </div>
-        </div>
-      </section>
+            <div className="adm-table-foot">
+              <span>
+                Hiển thị <b>{numberFormat.format(startItem)} – {numberFormat.format(endItem)}</b> trong tổng số{" "}
+                <b>{numberFormat.format(pagination.total)}</b> bộ câu hỏi
+              </span>
+              <div className="adm-pager">
+                <button
+                  type="button"
+                  className="adm-pager-btn"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={pagination.page <= 1}
+                  aria-label="Trang trước"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                {pageList.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`adm-pager-btn${item === pagination.page ? " is-active" : ""}`}
+                    aria-current={item === pagination.page ? "page" : undefined}
+                    onClick={() => setPage(item)}
+                  >
+                    {numberFormat.format(item)}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="adm-pager-btn"
+                  onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
+                  disabled={pagination.page >= pagination.totalPages}
+                  aria-label="Trang sau"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : null}
 
       {setModal ? (
         <AdminFormModal
           title={setModal === "edit" ? "Chỉnh sửa bộ câu hỏi" : "Tạo bộ câu hỏi mới"}
-          subtitle="Giao diện mẫu — dữ liệu chưa được lưu lên máy chủ."
+          subtitle={setModal === "edit"
+            ? "Thay đổi được lưu trực tiếp vào cơ sở dữ liệu."
+            : "Bộ mới sẽ hiển thị ở cổng học tập khi trạng thái là “Đang mở”."}
           size="lg"
-          submitLabel={setModal === "edit" ? "Lưu thay đổi" : "Tạo bộ ngay"}
           onSubmit={handleSetSubmit}
           onClose={closeSetModal}
+          footer={
+            <>
+              <button type="button" className="adm-ghost" onClick={closeSetModal}>Hủy bỏ</button>
+              <button type="submit" className="adm-primary" disabled={saving || !packageOptions.length}>
+                {saving
+                  ? "Đang lưu..."
+                  : setModal === "edit" ? "Lưu thay đổi" : "Tạo bộ ngay"}
+              </button>
+            </>
+          }
         >
-          <div className="adm-field-row">
-            <div className="adm-field">
-              <label htmlFor="adm-set-order">Thứ tự chặng</label>
-              <input
-                id="adm-set-order"
-                type="number"
-                min="1"
-                className="adm-input"
-                value={form.order}
-                onChange={(event) => updateForm("order", event.target.value)}
-              />
-            </div>
-            <div className="adm-field">
-              <label htmlFor="adm-set-code">Mã chặng</label>
-              <input
-                id="adm-set-code"
-                className="adm-input"
-                value={form.legCode}
-                onChange={(event) => updateForm("legCode", event.target.value)}
-                placeholder="Ví dụ: DBP-STG-09"
-              />
-            </div>
+          <div className="adm-field">
+            <label htmlFor="adm-set-package">Gói câu hỏi (gói cha)</label>
+            <select
+              id="adm-set-package"
+              className="adm-select"
+              value={form.packageId}
+              onChange={(event) => updateForm("packageId", event.target.value)}
+            >
+              <option value="">— Chọn gói câu hỏi —</option>
+              {packageOptions.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </select>
+            <span className="adm-field-hint">
+              {packageOptions.length
+                ? "Bộ câu hỏi thuộc một gói và tuân theo thứ tự chặng của gói đó."
+                : "Chưa có gói câu hỏi nào — hãy tạo gói ở trang Gói câu hỏi trước."}
+            </span>
           </div>
 
           <div className="adm-field">
@@ -660,7 +805,7 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
               className="adm-input"
               value={form.name}
               onChange={(event) => updateForm("name", event.target.value)}
-              placeholder="Ví dụ: Tiêu diệt cụm cứ điểm Him Lam"
+              placeholder="Ví dụ: Chặng 1: Buổi đầu dựng nước"
               autoFocus
             />
           </div>
@@ -676,41 +821,43 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
             />
           </div>
 
-          <div className="adm-field-row">
-            <div className="adm-field">
-              <label htmlFor="adm-set-package">Gói cha</label>
-              <input
-                id="adm-set-package"
-                className="adm-input"
-                value={form.parentPackage}
-                onChange={(event) => updateForm("parentPackage", event.target.value)}
-              />
-            </div>
-            <div className="adm-field">
-              <label htmlFor="adm-set-term">Học kỳ / Giai đoạn</label>
-              <input
-                id="adm-set-term"
-                className="adm-input"
-                value={form.term}
-                onChange={(event) => updateForm("term", event.target.value)}
-                placeholder="Ví dụ: Kỳ 1954"
-              />
-            </div>
-          </div>
-
-          <div className="adm-field">
-            <label htmlFor="adm-set-unlock">Điều kiện mở khóa</label>
-            <input
-              id="adm-set-unlock"
-              className="adm-input"
-              value={form.unlock}
-              onChange={(event) => updateForm("unlock", event.target.value)}
-              placeholder="Ví dụ: Hoàn thành Bộ #06 (≥ 80% điểm)"
-            />
-            <span className="adm-field-hint">Bộ câu hỏi tuân theo luồng mở khóa tuần tự của gói.</span>
-          </div>
-
           <div className="adm-field-row is-3">
+            <div className="adm-field">
+              <label htmlFor="adm-set-order">Thứ tự chặng</label>
+              <input
+                id="adm-set-order"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.order}
+                onChange={(event) => updateForm("order", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-set-score">Điểm của bộ</label>
+              <input
+                id="adm-set-score"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.score}
+                onChange={(event) => updateForm("score", event.target.value)}
+              />
+            </div>
+            <div className="adm-field">
+              <label htmlFor="adm-set-time">Thời lượng (phút)</label>
+              <input
+                id="adm-set-time"
+                type="number"
+                min="0"
+                className="adm-input"
+                value={form.timeLimit}
+                onChange={(event) => updateForm("timeLimit", event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="adm-field-row">
             <div className="adm-field">
               <label htmlFor="adm-set-difficulty">Độ khó</label>
               <select
@@ -725,44 +872,88 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
               </select>
             </div>
             <div className="adm-field">
-              <label htmlFor="adm-set-count">Số câu hỏi</label>
-              <input
-                id="adm-set-count"
-                type="number"
-                min="0"
-                className="adm-input"
-                value={form.questionCount}
-                onChange={(event) => updateForm("questionCount", event.target.value)}
-              />
-            </div>
-            <div className="adm-field">
-              <label htmlFor="adm-set-type">Loại câu hỏi</label>
+              <label htmlFor="adm-set-status">Trạng thái</label>
               <select
-                id="adm-set-type"
+                id="adm-set-status"
                 className="adm-select"
-                value={form.questionType}
-                onChange={(event) => updateForm("questionType", event.target.value)}
+                value={form.status}
+                onChange={(event) => updateForm("status", event.target.value)}
               >
-                {questionTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
+                <option value="active">Đang mở</option>
+                <option value="draft">Bản nháp</option>
+                <option value="locked">Tạm khóa</option>
+                <option value="inactive">Lưu trữ</option>
               </select>
             </div>
           </div>
 
           <div className="adm-field">
-            <label htmlFor="adm-set-status">Trạng thái</label>
+            <label htmlFor="adm-set-unlock">Điều kiện mở khóa</label>
             <select
-              id="adm-set-status"
+              id="adm-set-unlock"
               className="adm-select"
-              value={form.status}
-              onChange={(event) => updateForm("status", event.target.value)}
+              value={form.unlockType}
+              onChange={(event) => updateForm("unlockType", event.target.value)}
             >
-              <option value="open">Đang mở</option>
-              <option value="draft">Bản nháp</option>
-              <option value="locked">Tạm khóa</option>
+              {unlockOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
+            <span className="adm-field-hint">
+              “Hoàn thành chặng trước” giữ luồng học tuần tự: học viên phải làm xong chặng đứng trước mới mở được chặng này.
+            </span>
           </div>
+
+          <div className="adm-note">
+            <span className="adm-note-icon" aria-hidden="true"><FolderOpen size={18} /></span>
+            <p>
+              {setModal === "edit" && activeSet
+                ? <>Bộ này hiện có <b>{numberFormat.format(activeSet.questionCount)} câu hỏi</b> và{" "}
+                  <b>{numberFormat.format(activeSet.attemptCount)} lượt làm bài</b>. Số câu hỏi được đếm tự động
+                  từ ngân hàng câu hỏi, nên muốn thêm câu hãy quản lý ở trang Câu hỏi.</>
+                : <>Số câu hỏi của bộ được đếm tự động từ ngân hàng câu hỏi sau khi bạn thêm câu hỏi cho bộ này.</>}
+            </p>
+          </div>
+        </AdminFormModal>
+      ) : null}
+
+      {deleteTarget ? (
+        <AdminFormModal
+          title="Xóa bộ câu hỏi"
+          subtitle="Hành động này không thể hoàn tác."
+          onSubmit={handleDeleteSubmit}
+          onClose={() => setDeleteTarget(null)}
+          footer={
+            <>
+              <button type="button" className="adm-ghost" onClick={() => setDeleteTarget(null)}>Hủy bỏ</button>
+              <button
+                type="submit"
+                className="adm-primary"
+                disabled={saving || deleteTarget.attemptCount > 0}
+              >
+                {saving ? "Đang xóa..." : "Xóa bộ câu hỏi"}
+              </button>
+            </>
+          }
+        >
+          <div className="adm-note">
+            <span className="adm-note-icon" aria-hidden="true"><AlertTriangle size={18} /></span>
+            <p>
+              Bộ <b>{deleteTarget.name}</b> (gói <b>{deleteTarget.packageName}</b>) sẽ bị xóa khỏi hệ thống
+              cùng <b>{numberFormat.format(deleteTarget.questionCount)} câu hỏi</b> bên trong.
+            </p>
+          </div>
+
+          {deleteTarget.attemptCount > 0 ? (
+            <div className="adm-note">
+              <span className="adm-note-icon" aria-hidden="true"><AlertTriangle size={18} /></span>
+              <p>
+                Bộ đã có <b>{numberFormat.format(deleteTarget.attemptCount)} lượt làm bài</b> của học viên nên
+                không thể xóa để giữ lịch sử học tập. Hãy chuyển trạng thái sang <b>Tạm khóa</b> hoặc{" "}
+                <b>Lưu trữ</b> thay vì xóa.
+              </p>
+            </div>
+          ) : null}
         </AdminFormModal>
       ) : null}
 
@@ -775,3 +966,4 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
     </AdminConsoleLayout>
   );
 }
+

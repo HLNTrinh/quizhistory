@@ -18,6 +18,18 @@ import {
   adminPackages,
   adminUpdatePackage
 } from "../app/Controllers/AdminPackageController.js";
+import {
+  adminCreateQuestionSet,
+  adminDeleteQuestionSet,
+  adminQuestionSets,
+  adminUpdateQuestionSet
+} from "../app/Controllers/AdminQuestionSetController.js";
+import {
+  adminCreateQuestion,
+  adminDeleteQuestion,
+  adminQuestions,
+  adminUpdateQuestion
+} from "../app/Controllers/AdminQuestionController.js";
 import { requireAdmin } from "../app/Middleware/requireAuth.js";
 import { createRateLimiter } from "../app/Middleware/rateLimit.js";
 
@@ -52,5 +64,17 @@ router.get("/packages", requireAdmin, adminPackages);
 router.post("/packages", requireAdmin, adminCreatePackage);
 router.patch("/packages/:id", requireAdmin, adminUpdatePackage);
 router.delete("/packages/:id", requireAdmin, adminDeletePackage);
+
+// Quản lý bộ câu hỏi (chặng) trong từng gói
+router.get("/question-sets", requireAdmin, adminQuestionSets);
+router.post("/question-sets", requireAdmin, adminCreateQuestionSet);
+router.patch("/question-sets/:id", requireAdmin, adminUpdateQuestionSet);
+router.delete("/question-sets/:id", requireAdmin, adminDeleteQuestionSet);
+
+// Quản lý ngân hàng câu hỏi (trắc nghiệm 4 lựa chọn)
+router.get("/questions", requireAdmin, adminQuestions);
+router.post("/questions", requireAdmin, adminCreateQuestion);
+router.patch("/questions/:id", requireAdmin, adminUpdateQuestion);
+router.delete("/questions/:id", requireAdmin, adminDeleteQuestion);
 
 export default router;

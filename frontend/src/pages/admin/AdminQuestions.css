@@ -142,6 +142,110 @@
 /* Cột ngày tạo / sửa */
 .adm-q-date { color: var(--adm-muted); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
 
+/* ---------------- Chú thích thẻ số liệu (phân bố độ khó) ---------------- */
+.adm-q-stat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--adm-body);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.adm-q-stat-legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+.adm-q-stat-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--adm-muted);
+}
+
+.adm-q-stat-legend .is-green i { background: #12b981; }
+.adm-q-stat-legend .is-amber i { background: #e0a12a; }
+.adm-q-stat-legend .is-red i { background: #e25563; }
+
+/* ---------------- Chọn đáp án đúng trong hộp thoại ---------------- */
+.adm-q-option {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 172px) minmax(0, 1fr);
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--adm-line);
+  border-radius: 12px;
+  background: #fafaff;
+}
+
+.adm-q-option.is-correct {
+  border-color: #bfe9d5;
+  background: var(--adm-green-soft);
+}
+
+.adm-q-option-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--adm-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-q-option-pick input { width: 15px; height: 15px; accent-color: var(--adm-violet); flex: 0 0 auto; }
+
+.adm-q-option.is-correct .adm-q-option-pick { color: var(--adm-green-ink); }
+
+.adm-q-option-letter {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #e2f8ee;
+  color: #0f9d6b;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.adm-q-option-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------- Khối ghi chú trong hộp thoại ---------------- */
+/* Trùng với AdminQuestionSets.css; khai báo lại để trang tự đủ style khi tải riêng. */
+.adm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e6e0ff;
+  border-radius: 16px;
+  background: #f7f5ff;
+  color: #4b3fa8;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.adm-note p { margin: 0; }
+.adm-note b { color: #3b2f96; }
+
+.adm-note-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--adm-violet);
+  box-shadow: 0 4px 10px rgba(35, 31, 96, 0.08);
+}
+
 /* ---------------- Responsive ---------------- */
 @media (max-width: 1240px) {
   .adm-table-questions { min-width: 1180px; }
@@ -163,4 +267,9 @@
   .adm-q-content { max-width: 190px; }
   .adm-q-topic,
   .adm-q-set { white-space: normal; }
+}
+
+@media (max-width: 760px) {
+  .adm-q-option { grid-template-columns: minmax(0, 1fr); }
+  .adm-q-option-label { white-space: normal; }
 }

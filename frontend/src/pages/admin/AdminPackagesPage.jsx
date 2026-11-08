@@ -247,10 +247,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
     setPackageModal(null);
     setActivePackage(null);
   }
-  function closePackageModal() {
-    setPackageModal(null);
-    setActivePackage(null);
-  }
 
   async function handlePackageSubmit(event) {
     event.preventDefault();

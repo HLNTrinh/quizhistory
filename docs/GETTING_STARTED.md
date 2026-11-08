@@ -29,7 +29,7 @@ db.users.updateOne({ email: "admin@truong.edu.vn" }, { $set: { role: "admin" } }
 
 Hoặc chèn trực tiếp bản ghi mới với `passwordHash` sinh bằng `bcrypt.hash("mat-khau-cua-ban", 12)`.
 
-Endpoint quản trị: `POST /api/admin/auth/login`, `GET /api/admin/auth/me`, `GET /api/admin/overview`, `GET|POST /api/admin/users`, `PATCH|DELETE /api/admin/users/:id`, `GET|POST /api/admin/categories`, `PATCH|DELETE /api/admin/categories/:id`. Tất cả trừ `login` yêu cầu header `Authorization: Bearer <admin token>` và trả `401` nếu token là của học sinh.
+Endpoint quản trị: `POST /api/admin/auth/login`, `GET /api/admin/auth/me`, `GET /api/admin/overview`, `GET|POST /api/admin/users`, `PATCH|DELETE /api/admin/users/:id`, `GET|POST /api/admin/categories`, `PATCH|DELETE /api/admin/categories/:id`, `GET|POST /api/admin/packages`, `PATCH|DELETE /api/admin/packages/:id`, `GET|POST /api/admin/question-sets`, `PATCH|DELETE /api/admin/question-sets/:id`, `GET|POST /api/admin/questions`, `PATCH|DELETE /api/admin/questions/:id`. Tất cả trừ `login` yêu cầu header `Authorization: Bearer <admin token>` và trả `401` nếu token là của học sinh.
 
 `GET /api/admin/overview` trả toàn bộ số liệu trang Tổng quan, tính trực tiếp từ MongoDB (không có dữ liệu mẫu):
 
@@ -75,6 +75,30 @@ Trang `/admin/packages` đọc và ghi trực tiếp collection `packages`; số
 - `POST /api/admin/packages` — `name` (2–120 ký tự, không trùng), `categoryId` (có thể `null`), `description`, `image`, `difficulty`, `order`, `totalScore`, `estimatedTime`, `status`.
 - `PATCH /api/admin/packages/:id` — cập nhật từng phần với cùng bộ ràng buộc; trả `409` khi đổi sang tên đã tồn tại.
 - `DELETE /api/admin/packages/:id` — trả `409` nếu gói còn bộ câu hỏi.
+
+### Quản lý bộ câu hỏi
+
+Trang `/admin/question-sets` đọc và ghi trực tiếp collection `questionSets`; số câu hỏi, số lượt làm bài và độ chính xác được tính thật từ `questions` và `attempts`:
+
+- `GET /api/admin/question-sets?q=&difficulty=&status=&packageId=&sort=&page=&limit=` — `q` tìm theo tên bộ, mô tả và tên gói cha; `difficulty` (`easy`/`medium`/`hard`); `status` (`draft`/`active`/`inactive`/`locked`); `packageId` (mã gói hoặc `none` cho bộ chưa gán gói); `sort` (`order`/`newest`/`oldest`/`mostQuestions`/`hardest`/`name`); phân trang mặc định 10 dòng.
+  - `stats`: `total`, `active`, `draft`, `inactive`, `locked`, `openRatio`, `totalQuestions`, `averageQuestions`, `setsWithQuestions`, `questionCoverage`, `sequentialSets`, `sequentialRatio`, `totalAttempts`, `passedAttempts`, `averageAccuracy`, `passRate`, `passThreshold` (80%).
+  - `items`: `id`, `packageId`, `packageName`, `categoryName`, `name`, `description`, `order`, `difficulty`, `score`, `timeLimit`, `status`, `unlockType` (`open`/`complete_previous_set`), `questionCount`, `attemptCount`, `averageAccuracy`, `createdAt`, `updatedAt`.
+  - `pagination`: `page`, `limit`, `total`, `totalPages`.
+- `POST /api/admin/question-sets` — `packageId` (bắt buộc, phải tồn tại), `name` (2–120 ký tự, không trùng trong cùng gói), `description`, `order`, `difficulty`, `score`, `timeLimit`, `status`, `unlockType`. `unlockType` được lưu vào `unlockCondition`: `open` → `null`, `complete_previous_set` → `{ type: "complete_previous_set" }`.
+- `PATCH /api/admin/question-sets/:id` — cập nhật từng phần với cùng ràng buộc; đổi tên/chuyển gói vẫn kiểm tra trùng tên trong gói đích và trả `409` nếu trùng.
+- `DELETE /api/admin/question-sets/:id` — xóa bộ kèm toàn bộ `questions` của bộ và dọn tham chiếu trong `progress`; trả `409` nếu bộ đã có lượt làm bài (`attempts`) để giữ lịch sử học tập (khi đó nên chuyển trạng thái sang `locked` hoặc `inactive`).
+
+### Quản lý ngân hàng câu hỏi
+
+Trang `/admin/questions` đọc và ghi trực tiếp collection `questions`; tên bộ đề, gói câu hỏi và chủ đề được ghép từ `questionSets` → `packages` → `categories`:
+
+- `GET /api/admin/questions?q=&difficulty=&questionSetId=&packageId=&categoryId=&explanation=&sort=&page=&limit=` — `q` tìm theo nội dung câu hỏi (`content`/`prompt`); `difficulty` (`easy`/`medium`/`hard`); `questionSetId` (mã bộ đề hoặc `none` cho câu chưa gán bộ); `packageId`, `categoryId` lọc theo gói/chủ đề; `explanation` (`all`/`has`/`missing`); `sort` (`order`/`newest`/`oldest`/`difficulty`/`score`); `limit` tối đa 50, mặc định 10.
+  - `stats`: `total`, `easy`, `medium`, `hard`, `withExplanation`, `missingExplanation`, `explanationRatio`, `averageScore`, `coveredSets`, `totalSets`, `setCoverage`, `unattached`, `updated7d`.
+  - `items`: `id`, `code` (`#Q-xxxxxx`), `content`, `options` (4 phần tử), `answerIndex`, `answerLetter`, `answerText`, `explanation`, `hasExplanation`, `difficulty`, `score`, `order`, `questionSetId`, `questionSetName`, `packageId`, `packageName`, `categoryName`, `createdAt`, `updatedAt`.
+  - `pagination`: `page`, `limit`, `total`, `totalPages`.
+- `POST /api/admin/questions` — `questionSetId` (bắt buộc, phải tồn tại), `content` (5–2000 ký tự), `options` (đúng 4 chuỗi khác nhau, không rỗng), `answerIndex` (0–3), `explanation`, `difficulty`, `score` (0–100), `order` (bỏ trống thì backend tự lấy cuối bộ + 1). Backend ghi đồng thời `content`/`prompt`, `answerIndex`/`correctAnswer` và `order`/`sequenceOrder` để khớp cả API học viên.
+- `PATCH /api/admin/questions/:id` — cập nhật từng phần với cùng ràng buộc; đổi đáp án đúng chỉ ảnh hưởng các lượt làm bài mới, điểm đã chấm trước đó giữ nguyên.
+- `DELETE /api/admin/questions/:id` — xóa câu hỏi khỏi ngân hàng câu hỏi và trả `referencedAttempts` (số lượt làm bài còn tham chiếu) để giao diện cảnh báo; lịch sử điểm số không bị thay đổi.
 
 ## API chính
 
