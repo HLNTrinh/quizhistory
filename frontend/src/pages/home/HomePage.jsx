@@ -97,7 +97,7 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
       <nav className="lp-nav">
         <div className="lp-wrap">
           <a href="#top" className="lp-logo" aria-label="Sử Ký, trang chủ"><BrandMark small /><span>Sử Ký<small>ÔN TẬP LỊCH SỬ VIỆT NAM</small></span></a>
-          <div className="lp-links"><a href="#kham-pha">Khám phá</a><a href="#tinh-nang">Tính năng</a><a href="#chuyen-de">Chuyên đề</a><a href="#lo-trinh">Lộ trình</a></div>
+          <div className="lp-links"><a href="#kham-pha">Khám phá</a><a href="#tinh-nang">Tính năng</a><a href="#chuyen-de">Chuyên đề</a></div>
           <div className="right"><button className="lp-login-link" onClick={onLogin}>Đăng nhập</button><button className="lp-btn amber sm" onClick={onStartFree}>Bắt đầu ôn tập <ArrowRight size={15} /></button></div>
         </div>
       </nav>
@@ -119,8 +119,14 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
               </div>
             </div>
             <div className="lp-preview" aria-label="Xem trước không gian ôn tập">
-              <div className="top"><span>HÀNH TRÌNH LỊCH SỬ</span><span>01 / 04</span></div>
-              <div className="lp-preview-image"><span className="lp-preview-caption"><small>MỘT DẤU MỐC</small><strong>Điện Biên Phủ<br />1954</strong></span></div>
+              <div className="lp-preview-image">
+                <img className="lp-preview-art" src="/assets/images/su2.jpg" alt="Tranh minh họa đoàn quân Việt Nam trên đường hành quân" />
+                <span className="lp-preview-caption"><small>MỘT DẤU MỐC</small><strong>Điện Biên Phủ<br />1954</strong></span>
+                <figure className="lp-preview-map">
+                  <img src="/assets/images/su1.jpg" alt="Bản đồ cổ khu vực Đông Dương" />
+                  <figcaption>Từ những trang sử xưa</figcaption>
+                </figure>
+              </div>
               <div className="row"><span>Chuyên đề ôn tập</span><span>{topics[3]?.questionCount || 3} câu hỏi</span></div>
               <div className="lp-bar"><i style={{ width: "68%" }} /></div>
               <div className="quest"><CheckCircle2 size={15} /> Làm bài, xem đáp án và lời giải thích</div>
@@ -128,6 +134,30 @@ export default function LandingPage({ onLogin, onSignup, onStartFree }) {
           </div>
         </div>
       </header>
+
+      <section className="lp-archive-section" aria-labelledby="lp-archive-title">
+        <div className="lp-wrap">
+          <div className="lp-center">
+            <span className="lp-eyebrow">DẤU TÍCH QUA TƯ LIỆU</span>
+            <h2 className="lp-h2" id="lp-archive-title">Mở trang sử, khám phá chuyện xưa</h2>
+            <p className="lp-lead">Bản đồ và tư liệu lưu dấu những vùng đất, con người qua các thời kỳ.</p>
+          </div>
+          <div className="lp-archive-grid">
+            <figure className="lp-archive-card">
+              <img src="/assets/images/van-lang-map.png" alt="Bản đồ Văn Lang và Nam Cương thời kỳ cổ đại" loading="lazy" />
+              <figcaption><strong>Văn Lang và Nam Cương</strong><span>Bản đồ dựng nước thuở đầu</span></figcaption>
+            </figure>
+            <figure className="lp-archive-card">
+              <img src="/assets/images/old-document.png" alt="Giấy tờ hộ tịch cũ có chữ viết tay và dấu mộc" loading="lazy" />
+              <figcaption><strong>Dấu tích của một thời</strong><span>Tư liệu giấy tờ và bút tích xưa</span></figcaption>
+            </figure>
+            <figure className="lp-archive-card">
+              <img src="/assets/images/old-province-map.png" alt="Bản đồ địa giới tỉnh lỵ cổ với sông ngòi và đường sá" loading="lazy" />
+              <figcaption><strong>Bản đồ địa giới cổ</strong><span>Dấu vết vùng đất qua bản đồ xưa</span></figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
 
       <section className="lp-demo-section" id="thu-suc">
         <div className="lp-wrap lp-center">
