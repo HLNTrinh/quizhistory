@@ -12,6 +12,12 @@ import "./PackagesPage.css";
 
 const pageSize = 6;
 const artworkIcons = [Landmark, Swords, Shield, Flag, Medal, Compass];
+const packageCoverImages = {
+  "Buổi đầu dựng nước": "/assets/images/iv.png",
+  "Giành lại độc lập": "/assets/images/daiviet.jpg",
+  "Đại Việt thời Lý - Trần": "/assets/images/lytran.jpg",
+  "Việt Nam hiện đại": "/assets/images/vnhd.jpg"
+};
 
 function normalize(value) {
   return value.toLocaleLowerCase("vi-VN").replace(/đ/g, "d").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -259,10 +265,11 @@ export default function PackagesPage({ user, onLogout, onNavigate, packageId }) 
 
         {loading ? <div className="packages-loading">Đang tải danh sách gói câu hỏi...</div> : error && packages.length === 0 ? <div className="packages-empty"><span className="packages-empty-icon"><Search size={21} /></span><strong>Chưa thể tải danh sách gói câu hỏi</strong><span>{error}</span><button onClick={refreshPackages}>Thử tải lại</button></div> : visiblePackages.length ? <div className="package-grid">{visiblePackages.map((item, index) => {
           const Artwork = artworkIcons[((currentPage - 1) * pageSize + index) % artworkIcons.length];
+          const coverImage = item.image || packageCoverImages[item.name];
           return <article className="package-card" key={item._id}>
-            <div className={`package-art package-art-${((currentPage - 1) * pageSize + index) % 6}`}>
+            <div className={`package-art package-art-${((currentPage - 1) * pageSize + index) % 6}${coverImage ? " package-art-has-image" : ""}`}>
               <span className="package-art-badge"><Sparkles size={11} /> GÓI ÔN TẬP</span>
-              <Artwork size={53} strokeWidth={1.35} aria-hidden="true" />
+              {coverImage ? <img className="package-art-image-content" src={coverImage} alt={`Ảnh minh họa ${item.name}`} /> : <Artwork size={53} strokeWidth={1.35} aria-hidden="true" />}
               <span className="package-art-period">{item.category}</span>
             </div>
             <div className="package-card-content">

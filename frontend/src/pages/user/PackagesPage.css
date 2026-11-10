@@ -170,6 +170,20 @@
 .package-art::after { right: 43%; bottom: -66%; left: -16%; background: rgba(255, 255, 255, .2); }
 .package-art > svg { z-index: 1; filter: drop-shadow(0 3px 3px rgba(26, 91, 73, .1)); }
 
+.package-art-image-content {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.package-art-has-image::before,
+.package-art-has-image::after { background: rgba(7, 12, 22, .12); }
+.package-art-has-image .package-art-badge,
+.package-art-has-image .package-art-period { color: #fff; background: rgba(11, 17, 30, .45); }
+
 .package-art-badge {
   position: absolute;
   z-index: 2;
