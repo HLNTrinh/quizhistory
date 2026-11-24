@@ -19,10 +19,8 @@ import {
   Pencil,
   Percent,
   Plus,
-  RefreshCw,
   RotateCcw,
-  Trash2,
-  Workflow
+  Trash2
 } from "lucide-react";
 import AdminConsoleLayout from "./AdminConsoleLayout.jsx";
 import AdminTopActions from "./AdminTopActions.jsx";
@@ -33,21 +31,6 @@ import "./AdminQuestionSets.css";
 const numberFormat = new Intl.NumberFormat("vi-VN");
 const percentFormat = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 const PAGE_SIZE = 10;
-
-const difficultyOptions = [
-  { value: "all", label: "Tất cả độ khó" },
-  { value: "easy", label: "Cơ bản" },
-  { value: "medium", label: "Trung bình" },
-  { value: "hard", label: "Nâng cao" }
-];
-
-const statusOptions = [
-  { value: "all", label: "Tất cả trạng thái" },
-  { value: "active", label: "Đang mở" },
-  { value: "draft", label: "Bản nháp" },
-  { value: "locked", label: "Tạm khóa" },
-  { value: "inactive", label: "Lưu trữ" }
-];
 
 const sortOptions = [
   { value: "order", label: "Thứ tự chặng" },
@@ -117,17 +100,18 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [packageFilter, setPackageFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("order");
   const [page, setPage] = useState(1);
   const [unreadCount, setUnreadCount] = useState(0);
   const [toast, setToast] = useState("");
   const [packageOptions, setPackageOptions] = useState([]);
+  const [questionOptions, setQuestionOptions] = useState([]);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+  const [questionSearch, setQuestionSearch] = useState("");
+  const [questionRelationFilter, setQuestionRelationFilter] = useState("all");
   const [setModal, setSetModal] = useState(null); // "create" | "edit" | null
   const [activeSet, setActiveSet] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -175,6 +159,49 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    adminApi("/admin/questions?page=1&limit=50&sort=order")
+      .then((payload) => {
+        if (!cancelled) setQuestionOptions(Array.isArray(payload.items) ? payload.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setQuestionOptions([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!setModal) return undefined;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams({ page: "1", limit: "50", sort: "order" });
+      if (questionSearch.trim()) params.set("q", questionSearch.trim());
+      if (questionRelationFilter === "none") params.set("questionSetId", "none");
+      if (questionRelationFilter === "current" && activeSet?.id) {
+        params.set("questionSetId", activeSet.id);
+      }
+      adminApi(`/admin/questions?${params.toString()}`)
+        .then((payload) => {
+          if (cancelled) return;
+          let options = Array.isArray(payload.items) ? payload.items : [];
+          if (questionRelationFilter === "other") {
+            options = options.filter((question) => (
+              !question.questionSetId || question.questionSetId !== activeSet?.id
+            ));
+          }
+          setQuestionOptions(options);
+        })
+        .catch(() => {
+          if (!cancelled) setQuestionOptions([]);
+        });
+    }, 280);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [setModal, activeSet?.id, questionSearch, questionRelationFilter]);
+
   const loadQuestionSets = useCallback(async ({ silent = false } = {}) => {
     requestRef.current?.abort();
     const controller = new AbortController();
@@ -184,8 +211,6 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
 
     const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), sort: sortOrder });
     if (debouncedQuery.trim()) params.set("q", debouncedQuery.trim());
-    if (difficultyFilter !== "all") params.set("difficulty", difficultyFilter);
-    if (statusFilter !== "all") params.set("status", statusFilter);
     if (packageFilter !== "all") params.set("packageId", packageFilter);
 
     try {
@@ -203,16 +228,14 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
       if (!hasDataRef.current) setLoadState("error");
       return { ok: false, error };
     }
-  }, [page, debouncedQuery, difficultyFilter, statusFilter, packageFilter, sortOrder]);
+  }, [page, debouncedQuery, packageFilter, sortOrder]);
 
   useEffect(() => {
     loadQuestionSets();
   }, [loadQuestionSets]);
 
   async function handleRefresh() {
-    setRefreshing(true);
     const result = await loadQuestionSets();
-    setRefreshing(false);
     if (result.ok) showToast("Đã làm mới danh sách bộ câu hỏi.");
     else if (result.error) showToast(`Không tải được danh sách: ${result.error.message}`);
   }
@@ -220,8 +243,6 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
   function resetFilters() {
     setQuery("");
     setDebouncedQuery("");
-    setDifficultyFilter("all");
-    setStatusFilter("all");
     setPackageFilter("all");
     setSortOrder("order");
     setPage(1);
@@ -238,6 +259,9 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
 
   function openCreateSet() {
     setActiveSet(null);
+    setSelectedQuestionIds([]);
+    setQuestionSearch("");
+    setQuestionRelationFilter("none");
     setForm({
       ...EMPTY_FORM,
       packageId: defaultPackageId,
@@ -248,6 +272,8 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
 
   function handleEditSet(row) {
     setActiveSet(row);
+    setQuestionSearch("");
+    setQuestionRelationFilter("all");
     setForm({
       packageId: row.packageId || "",
       name: row.name,
@@ -258,7 +284,19 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
       status: row.status,
       unlockType: row.unlockType
     });
+    setSelectedQuestionIds([]);
     setSetModal("edit");
+    adminApi("/admin/questions?page=1&limit=50&sort=order")
+      .then((payload) => {
+        const options = Array.isArray(payload.items) ? payload.items : [];
+        setQuestionOptions(options);
+        setSelectedQuestionIds(
+          options
+            .filter((question) => question.questionSetId === row.id)
+            .map((question) => question.id)
+        );
+      })
+      .catch(() => setQuestionOptions([]));
   }
 
   function closeSetModal() {
@@ -287,6 +325,7 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
       order: Number(form.order) || 0,
       difficulty: form.difficulty,
       timeLimit: Number(form.timeLimit) || 0,
+      questionIds: selectedQuestionIds,
       status: form.status,
       unlockType: form.unlockType
     };
@@ -339,8 +378,6 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
   }
 
   const hasFilters = Boolean(debouncedQuery.trim())
-    || difficultyFilter !== "all"
-    || statusFilter !== "all"
     || packageFilter !== "all"
     || sortOrder !== "order";
 
@@ -515,6 +552,23 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
           </div>
 
           <section className="adm-filter-bar is-qsets" aria-label="Bộ lọc bộ câu hỏi">
+            <label className="adm-sort">
+              <ArrowUpDown size={15} aria-hidden="true" />
+              <span className="adm-sort-label">Sắp xếp thứ tự</span>
+              <select
+                value={sortOrder}
+                onChange={(event) => {
+                  setSortOrder(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Sắp xếp lại thứ tự bộ câu hỏi"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+
             <select
               className="adm-filter-select"
               value={packageFilter}
@@ -530,70 +584,11 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
               ))}
             </select>
 
-            <select
-              className="adm-filter-select"
-              value={difficultyFilter}
-              onChange={(event) => {
-                setDifficultyFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Lọc theo độ khó"
-            >
-              {difficultyOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-
-            <select
-              className="adm-filter-select"
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Lọc theo trạng thái"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
+            <button type="button" className="adm-ghost adm-filter-reset" onClick={resetFilters} disabled={!hasFilters}>
+              <RotateCcw size={15} /> Đặt lại bộ lọc
+            </button>
 
             <div className="adm-filter-actions">
-              <label className="adm-sort">
-                <ArrowUpDown size={15} aria-hidden="true" />
-                <span className="adm-sort-label">Sắp xếp thứ tự</span>
-                <select
-                  value={sortOrder}
-                  onChange={(event) => {
-                    setSortOrder(event.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Sắp xếp lại thứ tự bộ câu hỏi"
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <button
-                type="button"
-                className="adm-ghost"
-                onClick={() => showToast(stats
-                  ? `${numberFormat.format(stats.sequentialSets)}/${numberFormat.format(stats.total)} bộ đang khóa tuần tự theo chặng trước.`
-                  : "Chưa có dữ liệu luồng mở khóa.")}
-              >
-                <Workflow size={15} /> Kiểm tra luồng mở khóa
-              </button>
-
-              <button type="button" className="adm-ghost" onClick={resetFilters} disabled={!hasFilters}>
-                <RotateCcw size={15} /> Đặt lại lọc
-              </button>
-
-              <button type="button" className="adm-ghost" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw size={15} /> {refreshing ? "Đang tải..." : "Làm mới"}
-              </button>
-
               <button type="button" className="adm-primary" onClick={openCreateSet}>
                 <Plus size={16} /> Tạo bộ câu hỏi mới
               </button>
@@ -844,6 +839,52 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
                 value={form.timeLimit}
                 onChange={(event) => updateForm("timeLimit", event.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label>Câu hỏi thuộc bộ</label>
+            <div className="adm-inline-filters">
+              <input
+                className="adm-input"
+                value={questionSearch}
+                onChange={(event) => setQuestionSearch(event.target.value)}
+                placeholder="Tìm nội dung hoặc mã câu hỏi..."
+              />
+              <select
+                className="adm-select"
+                value={questionRelationFilter}
+                onChange={(event) => setQuestionRelationFilter(event.target.value)}
+              >
+                <option value="all">Tất cả câu hỏi</option>
+                <option value="none">Chưa thuộc bộ nào</option>
+                <option value="current">Thuộc bộ hiện tại</option>
+                <option value="other">Thuộc bộ khác</option>
+              </select>
+            </div>
+            <div className="adm-inline-selection">
+              {questionOptions.length ? questionOptions.map((question) => (
+                <label key={question.id} className="adm-inline-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedQuestionIds.includes(question.id)}
+                    onChange={(event) => {
+                      setSelectedQuestionIds((current) => event.target.checked
+                        ? [...current, question.id]
+                        : current.filter((id) => id !== question.id));
+                    }}
+                  />
+                  <span>
+                    <strong>{question.content}</strong>
+                    <small>{question.code} · {question.score} điểm</small>
+                  </span>
+                  {question.questionSetId && question.questionSetId !== activeSet?.id ? (
+                    <em>Đang thuộc bộ khác</em>
+                  ) : null}
+                </label>
+              )) : (
+                <span className="adm-field-hint">Chưa có câu hỏi nào trong hệ thống.</span>
+              )}
             </div>
           </div>
 

@@ -36,27 +36,12 @@ const periodOptions = [
   { value: "week", label: "Tuần này" }
 ];
 
-const tierOptions = [
-  { value: "all", label: "Tất cả cấp bậc" },
-  { value: "champion", label: "Quân quân Sử Việt" },
-  { value: "general", label: "Đại tướng Sử học" },
-  { value: "pioneer", label: "Tiền phong" },
-  { value: "young", label: "Đúng sử trẻ" }
-];
-
 const sortOptions = [
   { value: "xp-desc", label: "XP giảm dần" },
   { value: "xp-asc", label: "XP tăng dần" },
   { value: "accuracy", label: "Độ chính xác cao nhất" },
   { value: "recent", label: "Cập nhật gần nhất" }
 ];
-
-const tierMeta = {
-  champion: { label: "Quân quân Sử Việt", tone: "amber" },
-  general: { label: "Đại tướng Sử học", tone: "violet" },
-  pioneer: { label: "Tiền phong", tone: "blue" },
-  young: { label: "Đúng sử trẻ", tone: "green" }
-};
 
 const medalTones = ["gold", "silver", "bronze"];
 
@@ -72,7 +57,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [period, setPeriod] = useState("all");
-  const [tier, setTier] = useState("all");
   const [sort, setSort] = useState("xp-desc");
   const [page, setPage] = useState(1);
 
@@ -115,11 +99,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
     setPage(1);
   }
 
-  function handleTierChange(event) {
-    setTier(event.target.value);
-    setPage(1);
-  }
-
   function handleSortChange(event) {
     setSort(event.target.value);
     setPage(1);
@@ -134,7 +113,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
       const params = new URLSearchParams({
         q: debouncedQuery,
         period,
-        tier,
         sort,
         page: String(page),
         limit: String(PAGE_SIZE)
@@ -151,7 +129,7 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
     } finally {
       setRefreshing(false);
     }
-  }, [debouncedQuery, period, tier, sort, page]);
+  }, [debouncedQuery, period, sort, page]);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -166,7 +144,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
     setQuery("");
     setDebouncedQuery("");
     setPeriod("all");
-    setTier("all");
     setSort("xp-desc");
     setPage(1);
     showToast("Đã đặt lại toàn bộ bộ lọc bảng xếp hạng.");
@@ -213,7 +190,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
   }
 
   const periodLabel = periodOptions.find((option) => option.value === period)?.label || "";
-  const tierLabel = tierOptions.find((option) => option.value === tier)?.label || "";
 
   const statCards = useMemo(() => {
     if (!stats) return [];
@@ -345,17 +321,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
           ))}
         </select>
 
-        <select
-          className="adm-filter-select"
-          value={tier}
-          onChange={handleTierChange}
-          aria-label="Lọc theo cấp bậc"
-        >
-          {tierOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-
         <span className="adm-rank-sort">
           <ArrowUpDown size={14} aria-hidden="true" />
           <select
@@ -403,17 +368,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
               <X size={11} />
             </button>
           </span>
-          <span className="adm-rank-chip">
-            Cấp bậc: {tierLabel}
-            <button
-              type="button"
-              onClick={() => { setTier("all"); setPage(1); }}
-              aria-label="Bỏ lọc cấp bậc"
-              disabled={tier === "all"}
-            >
-              <X size={11} />
-            </button>
-          </span>
           {debouncedQuery ? (
             <span className="adm-rank-chip">
               Tìm kiếm: {debouncedQuery}
@@ -452,7 +406,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
               <tr>
                 <th scope="col">Thứ hạng</th>
                 <th scope="col">Học viên</th>
-                <th scope="col">Cấp bậc / Danh hiệu</th>
                 <th scope="col">Tổng XP</th>
                 <th scope="col">Tiến trình</th>
                 <th scope="col">Độ chính xác</th>
@@ -463,7 +416,7 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
             <tbody>
               {loadState === "loading" && !refreshing ? (
                 <tr>
-                  <td colSpan={8} className="adm-empty-row" style={{ padding: 40 }}>
+                  <td colSpan={7} className="adm-empty-row" style={{ padding: 40 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6366f1" }}>
                       <RefreshCw size={18} className="adm-spin" /> Đang tải bảng xếp hạng người học...
                     </div>
@@ -471,13 +424,12 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
                 </tr>
               ) : learners.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="adm-empty-row">
+                  <td colSpan={7} className="adm-empty-row">
                     Không tìm thấy học viên phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
               ) : (
                 learners.map((row, index) => {
-                  const meta = tierMeta[row.tier] || tierMeta.young;
                   const rankNumber = (pagination.page - 1) * pagination.limit + index + 1;
                   const isTopMedal = rankNumber <= 3;
                   return (
@@ -504,9 +456,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
                             <small>{row.email}</small>
                           </span>
                         </div>
-                      </td>
-                      <td>
-                        <span className={`adm-rank-tier is-${meta.tone}`}>{meta.label}</span>
                       </td>
                       <td>
                         <span className="adm-rank-xp">
@@ -633,7 +582,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
             <div className="adm-detail-row"><span>Mã học viên</span><strong>{viewLearner.shortId || viewLearner.id}</strong></div>
             <div className="adm-detail-row"><span>Họ và tên</span><strong>{viewLearner.name}</strong></div>
             <div className="adm-detail-row"><span>Email</span><strong>{viewLearner.email}</strong></div>
-            <div className="adm-detail-row"><span>Cấp bậc</span><strong>{tierMeta[viewLearner.tier]?.label || viewLearner.tier}</strong></div>
             <div className="adm-detail-row"><span>Điểm XP</span><strong>{numberFormat.format(viewLearner.xp)} XP · {viewLearner.delta}</strong></div>
             <div className="adm-detail-row"><span>Tiến độ</span><strong>{viewLearner.packages} gói · {viewLearner.sets} bộ đề · {viewLearner.progress}%</strong></div>
             <div className="adm-detail-row"><span>Độ chính xác</span><strong>{decimalFormat.format(viewLearner.accuracy)}%</strong></div>

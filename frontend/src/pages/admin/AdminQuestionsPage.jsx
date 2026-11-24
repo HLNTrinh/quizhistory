@@ -18,7 +18,6 @@ import {
   Info,
   Pencil,
   Plus,
-  RefreshCw,
   RotateCcw,
   Trash2,
   TrendingUp
@@ -34,19 +33,6 @@ const percentFormat = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 
 const PAGE_SIZE = 10;
 
 const answerLetters = ["A", "B", "C", "D"];
-
-const difficultyOptions = [
-  { value: "all", label: "Tất cả độ khó" },
-  { value: "easy", label: "Cơ bản" },
-  { value: "medium", label: "Trung bình" },
-  { value: "hard", label: "Nâng cao" }
-];
-
-const explanationOptions = [
-  { value: "all", label: "Mọi trạng thái giải thích" },
-  { value: "has", label: "Đã có giải thích" },
-  { value: "missing", label: "Chưa có giải thích" }
-];
 
 const sortOptions = [
   { value: "order", label: "Thứ tự trong bộ" },
@@ -97,12 +83,9 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [explanationFilter, setExplanationFilter] = useState("all");
   const [setFilter, setSetFilter] = useState("all");
   const [packageFilter, setPackageFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("order");
@@ -176,8 +159,6 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
 
     const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), sort: sortOrder });
     if (debouncedQuery.trim()) params.set("q", debouncedQuery.trim());
-    if (difficultyFilter !== "all") params.set("difficulty", difficultyFilter);
-    if (explanationFilter !== "all") params.set("explanation", explanationFilter);
     if (setFilter !== "all") params.set("questionSetId", setFilter);
     if (packageFilter !== "all") params.set("packageId", packageFilter);
 
@@ -196,16 +177,14 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
       if (!hasDataRef.current) setLoadState("error");
       return { ok: false, error };
     }
-  }, [page, debouncedQuery, difficultyFilter, explanationFilter, setFilter, packageFilter, sortOrder]);
+  }, [page, debouncedQuery, setFilter, packageFilter, sortOrder]);
 
   useEffect(() => {
     loadQuestions();
   }, [loadQuestions]);
 
   async function handleRefresh() {
-    setRefreshing(true);
     const result = await loadQuestions();
-    setRefreshing(false);
     if (result.ok) showToast("Đã làm mới danh sách câu hỏi.");
     else if (result.error) showToast(`Không tải được danh sách: ${result.error.message}`);
   }
@@ -213,8 +192,6 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
   function resetFilters() {
     setQuery("");
     setDebouncedQuery("");
-    setDifficultyFilter("all");
-    setExplanationFilter("all");
     setSetFilter("all");
     setPackageFilter("all");
     setSortOrder("order");
@@ -345,8 +322,6 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
   }
 
   const hasFilters = Boolean(debouncedQuery.trim())
-    || difficultyFilter !== "all"
-    || explanationFilter !== "all"
     || setFilter !== "all"
     || packageFilter !== "all"
     || sortOrder !== "order";
@@ -520,26 +495,29 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
           </div>
 
           <section className="adm-filter-bar" aria-label="Bộ lọc câu hỏi">
-            <select
-              className="adm-filter-select"
-              value={setFilter}
-              onChange={(event) => {
-                setSetFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Lọc theo bộ đề"
-            >
-              <option value="all">Tất cả bộ đề</option>
-              {setOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.name}</option>
-              ))}
-            </select>
+            <label className="adm-sort">
+              <ArrowUpDown size={15} aria-hidden="true" />
+              <span className="adm-sort-label">Sắp xếp thứ tự</span>
+              <select
+                value={sortOrder}
+                onChange={(event) => {
+                  setSortOrder(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Sắp xếp danh sách câu hỏi"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
 
             <select
               className="adm-filter-select"
               value={packageFilter}
               onChange={(event) => {
                 setPackageFilter(event.target.value);
+                setSetFilter("all");
                 setPage(1);
               }}
               aria-label="Lọc theo gói câu hỏi"
@@ -552,58 +530,26 @@ export default function AdminQuestionsPage({ admin, onLogout, onNavigate }) {
 
             <select
               className="adm-filter-select"
-              value={difficultyFilter}
+              value={setFilter}
               onChange={(event) => {
-                setDifficultyFilter(event.target.value);
+                setSetFilter(event.target.value);
                 setPage(1);
               }}
-              aria-label="Lọc theo độ khó"
+              aria-label="Lọc theo bộ đề"
             >
-              {difficultyOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
+              <option value="all">Tất cả bộ đề</option>
+              {setOptions
+                .filter((option) => packageFilter === "all" || option.packageId === packageFilter)
+                .map((option) => (
+                  <option key={option.id} value={option.id}>{option.name}</option>
+                ))}
             </select>
 
-            <select
-              className="adm-filter-select"
-              value={explanationFilter}
-              onChange={(event) => {
-                setExplanationFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Lọc theo trạng thái giải thích"
-            >
-              {explanationOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
+            <button type="button" className="adm-ghost adm-filter-reset" onClick={resetFilters} disabled={!hasFilters}>
+              <RotateCcw size={15} /> Đặt lại bộ lọc
+            </button>
 
             <div className="adm-filter-actions">
-              <label className="adm-sort">
-                <ArrowUpDown size={15} aria-hidden="true" />
-                <span className="adm-sort-label">Sắp xếp thứ tự</span>
-                <select
-                  value={sortOrder}
-                  onChange={(event) => {
-                    setSortOrder(event.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Sắp xếp danh sách câu hỏi"
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <button type="button" className="adm-ghost" onClick={resetFilters} disabled={!hasFilters}>
-                <RotateCcw size={15} /> Đặt lại lọc
-              </button>
-
-              <button type="button" className="adm-ghost" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw size={15} /> {refreshing ? "Đang tải..." : "Làm mới"}
-              </button>
-
               <button type="button" className="adm-primary" onClick={openCreateQuestion}>
                 <Plus size={16} /> Thêm câu hỏi mới
               </button>

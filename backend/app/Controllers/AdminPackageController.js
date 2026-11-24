@@ -113,6 +113,13 @@ function validatePayload(body, { partial = false } = {}) {
     result.status = body.status;
   }
 
+  if (body.questionSetIds !== undefined) {
+    if (!Array.isArray(body.questionSetIds) || body.questionSetIds.some((id) => typeof id !== "string" || !mongoose.isValidObjectId(id))) {
+      return { error: "Danh sách bộ câu hỏi không hợp lệ." };
+    }
+    result.questionSetIds = [...new Set(body.questionSetIds)];
+  }
+
   for (const field of ["order"]) {
     if (body[field] === undefined) continue;
     const number = Number(body[field]);
@@ -268,6 +275,22 @@ export async function adminCreatePackage(request, response) {
     estimatedTime: 0,
     status: value.status || "draft"
   });
+  if (value.questionSetIds?.length) {
+    const previouslyAssignedSets = await QuestionSet.find({
+      _id: { $in: value.questionSetIds }
+    }).select("packageId").lean();
+    const affectedPackageIds = new Set(
+      previouslyAssignedSets
+        .map((questionSet) => questionSet.packageId?.toString())
+        .filter((packageId) => packageId && packageId !== created._id.toString())
+    );
+
+    await QuestionSet.updateMany(
+      { _id: { $in: value.questionSetIds } },
+      { $set: { packageId: created._id } }
+    );
+    for (const packageId of affectedPackageIds) await syncPackageMetrics(packageId);
+  }
   await syncPackageMetrics(created._id);
 
   const category = created.categoryId
@@ -311,6 +334,31 @@ export async function adminUpdatePackage(request, response) {
   if (value.status !== undefined) learningPackage.status = value.status;
 
   await learningPackage.save();
+  if (value.questionSetIds !== undefined) {
+    const previouslyAssignedSets = await QuestionSet.find({
+      $or: [
+        { packageId: learningPackage._id },
+        { _id: { $in: value.questionSetIds } }
+      ]
+    }).select("packageId").lean();
+    const affectedPackageIds = new Set(
+      previouslyAssignedSets
+        .map((questionSet) => questionSet.packageId?.toString())
+        .filter((packageId) => packageId)
+    );
+
+    await QuestionSet.updateMany(
+      { packageId: learningPackage._id },
+      { $set: { packageId: null } }
+    );
+    if (value.questionSetIds.length) {
+      await QuestionSet.updateMany(
+        { _id: { $in: value.questionSetIds } },
+        { $set: { packageId: learningPackage._id } }
+      );
+    }
+    for (const packageId of affectedPackageIds) await syncPackageMetrics(packageId);
+  }
   await syncPackageMetrics(learningPackage._id);
 
   const [category, setCount, questionSetIds] = await Promise.all([

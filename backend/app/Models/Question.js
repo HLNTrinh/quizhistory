@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const questionSchema = new mongoose.Schema({
-  questionSetId: { type: mongoose.Schema.Types.ObjectId, ref: "QuestionSet", required: true },
+  questionSetId: { type: mongoose.Schema.Types.ObjectId, ref: "QuestionSet", default: null },
   content: { type: String, trim: true, required: true },
   prompt: { type: String, trim: true },
   options: {

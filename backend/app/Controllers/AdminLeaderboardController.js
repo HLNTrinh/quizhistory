@@ -40,17 +40,9 @@ function timeAgo(date) {
   }).format(new Date(date));
 }
 
-function calculateTier(xp) {
-  if (xp >= 1000) return "champion";
-  if (xp >= 500) return "general";
-  if (xp >= 100) return "pioneer";
-  return "young";
-}
-
 export async function adminLeaderboard(request, response) {
   const search = typeof request.query.q === "string" ? request.query.q.trim() : "";
   const period = request.query.period || "all";
-  const tier = request.query.tier || "all";
   const sort = request.query.sort || "xp-desc";
   const page = Math.max(1, Number.parseInt(request.query.page, 10) || 1);
   const limit = Math.min(50, Math.max(1, Number.parseInt(request.query.limit, 10) || 10));
@@ -151,7 +143,6 @@ export async function adminLeaderboard(request, response) {
       name,
       email: user.email,
       initials: buildInitials(name),
-      tier: calculateTier(xp),
       xp,
       delta,
       packages,
@@ -182,10 +173,6 @@ export async function adminLeaderboard(request, response) {
   if (search) {
     const pattern = new RegExp(escapeRegExp(search), "i");
     filtered = filtered.filter((row) => pattern.test(row.name) || pattern.test(row.email) || pattern.test(row.id) || pattern.test(row.shortId));
-  }
-
-  if (tier !== "all") {
-    filtered = filtered.filter((row) => row.tier === tier);
   }
 
   if (period === "week") {

@@ -116,6 +116,10 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [toast, setToast] = useState("");
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [questionSetOptions, setQuestionSetOptions] = useState([]);
+  const [selectedQuestionSetIds, setSelectedQuestionSetIds] = useState([]);
+  const [questionSetSearch, setQuestionSetSearch] = useState("");
+  const [questionSetRelationFilter, setQuestionSetRelationFilter] = useState("all");
   const [packageModal, setPackageModal] = useState(null); // "create" | "edit" | null
   const [activePackage, setActivePackage] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -162,6 +166,49 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    adminApi("/admin/question-sets?page=1&limit=50&sort=order")
+      .then((payload) => {
+        if (!cancelled) setQuestionSetOptions(Array.isArray(payload.items) ? payload.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setQuestionSetOptions([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!packageModal) return undefined;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams({ page: "1", limit: "50", sort: "order" });
+      if (questionSetSearch.trim()) params.set("q", questionSetSearch.trim());
+      if (questionSetRelationFilter === "none") params.set("packageId", "none");
+      if (questionSetRelationFilter === "current" && activePackage?.id) {
+        params.set("packageId", activePackage.id);
+      }
+      adminApi(`/admin/question-sets?${params.toString()}`)
+        .then((payload) => {
+          if (cancelled) return;
+          let options = Array.isArray(payload.items) ? payload.items : [];
+          if (questionSetRelationFilter === "other") {
+            options = options.filter((questionSet) => (
+              !questionSet.packageId || questionSet.packageId !== activePackage?.id
+            ));
+          }
+          setQuestionSetOptions(options);
+        })
+        .catch(() => {
+          if (!cancelled) setQuestionSetOptions([]);
+        });
+    }, 280);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [packageModal, activePackage?.id, questionSetSearch, questionSetRelationFilter]);
 
   const loadPackages = useCallback(async ({ silent = false } = {}) => {
     requestRef.current?.abort();
@@ -217,11 +264,16 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   function openCreatePackage() {
     setActivePackage(null);
     setForm(EMPTY_FORM);
+    setSelectedQuestionSetIds([]);
+    setQuestionSetSearch("");
+    setQuestionSetRelationFilter("none");
     setPackageModal("create");
   }
 
   function handleEditPackage(row) {
     setActivePackage(row);
+    setQuestionSetSearch("");
+    setQuestionSetRelationFilter("all");
     setForm({
       name: row.name,
       categoryId: row.categoryId || "",
@@ -231,7 +283,19 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       order: String(row.order),
       status: row.status
     });
+    setSelectedQuestionSetIds([]);
     setPackageModal("edit");
+    adminApi("/admin/question-sets?page=1&limit=50&sort=order")
+      .then((payload) => {
+        const options = Array.isArray(payload.items) ? payload.items : [];
+        setQuestionSetOptions(options);
+        setSelectedQuestionSetIds(
+          options
+            .filter((questionSet) => questionSet.packageId === row.id)
+            .map((questionSet) => questionSet.id)
+        );
+      })
+      .catch(() => setQuestionSetOptions([]));
   }
 
   function closePackageModal() {
@@ -256,6 +320,7 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       image: normalizePackageImage(form.image),
       difficulty: form.difficulty,
       order: Number(form.order) || 0,
+      questionSetIds: selectedQuestionSetIds,
       status: form.status
     };
 
@@ -806,6 +871,52 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
             <div className="adm-field">
               <label>Thời lượng</label>
               <input className="adm-input" value={packageModal === "edit" ? `${activePackage?.estimatedTime || 0} phút (tự động)` : "Tự động tính từ thời lượng các bộ"} readOnly />
+            </div>
+          </div>
+
+          <div className="adm-field">
+            <label>Bộ câu hỏi thuộc gói</label>
+            <div className="adm-inline-filters">
+              <input
+                className="adm-input"
+                value={questionSetSearch}
+                onChange={(event) => setQuestionSetSearch(event.target.value)}
+                placeholder="Tìm tên hoặc mô tả bộ câu hỏi..."
+              />
+              <select
+                className="adm-select"
+                value={questionSetRelationFilter}
+                onChange={(event) => setQuestionSetRelationFilter(event.target.value)}
+              >
+                <option value="all">Tất cả bộ câu hỏi</option>
+                <option value="none">Chưa thuộc gói nào</option>
+                <option value="current">Thuộc gói hiện tại</option>
+                <option value="other">Thuộc gói khác</option>
+              </select>
+            </div>
+            <div className="adm-inline-selection">
+              {questionSetOptions.length ? questionSetOptions.map((questionSet) => (
+                <label key={questionSet.id} className="adm-inline-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedQuestionSetIds.includes(questionSet.id)}
+                    onChange={(event) => {
+                      setSelectedQuestionSetIds((current) => event.target.checked
+                        ? [...current, questionSet.id]
+                        : current.filter((id) => id !== questionSet.id));
+                    }}
+                  />
+                  <span>
+                    <strong>{questionSet.name}</strong>
+                    <small>{questionSet.questionCount || 0} câu · {questionSet.timeLimit || 0} phút</small>
+                  </span>
+                  {questionSet.packageId && questionSet.packageId !== activePackage?.id ? (
+                    <em>Đang thuộc gói khác</em>
+                  ) : null}
+                </label>
+              )) : (
+                <span className="adm-field-hint">Chưa có bộ câu hỏi nào trong hệ thống.</span>
+              )}
             </div>
           </div>
 

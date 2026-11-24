@@ -127,6 +127,13 @@ function validatePayload(body, { partial = false } = {}) {
     result[field] = Math.round(number);
   }
 
+  if (body.questionIds !== undefined) {
+    if (!Array.isArray(body.questionIds) || body.questionIds.some((id) => typeof id !== "string" || !mongoose.isValidObjectId(id))) {
+      return { error: "Danh sách câu hỏi không hợp lệ." };
+    }
+    result.questionIds = [...new Set(body.questionIds)];
+  }
+
   return { value: result };
 }
 
@@ -342,6 +349,12 @@ export async function adminCreateQuestionSet(request, response) {
     unlockCondition: buildUnlockCondition(value.unlockType || "open"),
     status: value.status || "draft"
   });
+  if (value.questionIds?.length) {
+    await Question.updateMany(
+      { _id: { $in: value.questionIds } },
+      { $set: { questionSetId: created._id } }
+    );
+  }
   await syncQuestionSetMetrics(created._id);
 
   const row = await loadQuestionSetRow(created._id);
@@ -398,6 +411,18 @@ export async function adminUpdateQuestionSet(request, response) {
   if (value.timeLimit !== undefined) questionSet.timeLimit = value.timeLimit;
 
   await questionSet.save();
+  if (value.questionIds !== undefined) {
+    await Question.updateMany(
+      { questionSetId: questionSet._id },
+      { $set: { questionSetId: null } }
+    );
+    if (value.questionIds.length) {
+      await Question.updateMany(
+        { _id: { $in: value.questionIds } },
+        { $set: { questionSetId: questionSet._id } }
+      );
+    }
+  }
   await syncQuestionSetMetrics(questionSet._id);
   if (oldPackageId && oldPackageId !== questionSet.packageId?.toString()) {
     await syncPackageMetrics(oldPackageId);

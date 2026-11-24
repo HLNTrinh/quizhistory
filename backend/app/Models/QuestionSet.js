@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const questionSetSchema = new mongoose.Schema({
-  packageId: { type: mongoose.Schema.Types.ObjectId, ref: "Package", required: true },
+  packageId: { type: mongoose.Schema.Types.ObjectId, ref: "Package", default: null },
   name: { type: String, required: true, trim: true, maxlength: 120 },
   description: { type: String, default: "", trim: true, maxlength: 2000 },
   sequenceOrder: { type: Number, min: 0 },
