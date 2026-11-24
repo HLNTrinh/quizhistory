@@ -147,7 +147,7 @@ export default function AdminConsoleLayout({
           <div className="adm-content">{children}</div>
 
           <footer className="adm-footer">
-            <span className="adm-footer-brand"><BrandMark small /> Sử Ký</span>
+            
             <p>© 2026 Sử Ký. Nền tảng ôn tập Lịch sử Việt Nam tương tác hàng đầu.</p>
             <div className="adm-footer-links">
               {consoleFooterLinks.map((label) => (

@@ -116,7 +116,7 @@ export default function AdminLoginPage({ onAuthenticated, onExit }) {
                 <span className="admin-login-pulse-ring" />
                 <span className="admin-login-pulse-center" />
               </span>
-              <span>Hệ thống ổn định: <strong>99.98% Uptime</strong></span>
+              
             </div>
 
             <button

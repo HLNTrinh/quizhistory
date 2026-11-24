@@ -81,7 +81,6 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -155,9 +154,7 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
   }, [loadCategories]);
 
   async function handleRefresh() {
-    setRefreshing(true);
     const result = await loadCategories();
-    setRefreshing(false);
     if (result.ok) showToast("Đã làm mới danh sách chủ đề.");
     else if (result.error) showToast(`Không tải được danh sách: ${result.error.message}`);
   }
@@ -437,6 +434,23 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
 
 
           <section className="adm-filter-bar is-categories" aria-label="Bộ lọc chủ đề">
+            <label className="adm-sort">
+              <ArrowUpDown size={15} aria-hidden="true" />
+              <span className="adm-sort-label">Sắp xếp thứ tự hiển thị</span>
+              <select
+                value={sortOrder}
+                onChange={(event) => {
+                  setSortOrder(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Sắp xếp thứ tự hiển thị"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+
             <select
               className="adm-filter-select"
               value={statusFilter}
@@ -456,27 +470,6 @@ export default function AdminCategoriesPage({ admin, onLogout, onNavigate }) {
             </button>
 
             <div className="adm-filter-actions">
-              <label className="adm-sort">
-                <ArrowUpDown size={15} aria-hidden="true" />
-                <span className="adm-sort-label">Sắp xếp thứ tự hiển thị</span>
-                <select
-                  value={sortOrder}
-                  onChange={(event) => {
-                    setSortOrder(event.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Sắp xếp thứ tự hiển thị"
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <button type="button" className="adm-ghost" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw size={15} /> {refreshing ? "Đang tải..." : "Làm mới"}
-              </button>
-
               <button type="button" className="adm-primary" onClick={openCreateCategory}>
                 <Plus size={16} /> Tạo chủ đề mới
               </button>

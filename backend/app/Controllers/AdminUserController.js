@@ -187,7 +187,7 @@ export async function adminUpdateUser(request, response) {
     return response.status(400).json({ message: "Mã người dùng không hợp lệ." });
   }
 
-  const user = await User.findById(id);
+  const user = await User.findById(id).select("+passwordHash");
   if (!user) {
     return response.status(404).json({ message: "Không tìm thấy người dùng cần cập nhật." });
   }
@@ -240,6 +240,14 @@ export async function adminUpdateUser(request, response) {
       return response.status(409).json({ message: "Bạn không thể tự khóa tài khoản đang đăng nhập." });
     }
     user.status = body.status;
+    changed = true;
+  }
+
+  if (body.password !== undefined) {
+    if (typeof body.password !== "string" || body.password.length < 8) {
+      return response.status(400).json({ message: "Mật khẩu mới cần có ít nhất 8 ký tự." });
+    }
+    user.passwordHash = await bcrypt.hash(body.password, 12);
     changed = true;
   }
 

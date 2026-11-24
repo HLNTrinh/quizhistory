@@ -20,6 +20,24 @@ function normalizeDifficulty(value) {
   return DIFFICULTIES.includes(value) ? value : "medium";
 }
 
+function normalizePackageImage(value) {
+  const image = value.trim();
+  if (!image) return "";
+
+  const lower = image.toLowerCase();
+  const windowsPublic = lower.lastIndexOf("\\public\\");
+  if (windowsPublic >= 0) {
+    return `/${image.slice(windowsPublic + "\\public\\".length).replaceAll("\\", "/")}`;
+  }
+
+  const slashPublic = lower.lastIndexOf("/public/");
+  if (slashPublic >= 0) {
+    return `/${image.slice(slashPublic + "/public/".length).replaceAll("\\", "/")}`;
+  }
+
+  return image.replaceAll("\\", "/");
+}
+
 function serializePackage(row, { categoryName = "", setCount = 0, questionCount = 0 } = {}) {
   return {
     id: row._id.toString(),
@@ -77,7 +95,7 @@ function validatePayload(body, { partial = false } = {}) {
     if (typeof body.image !== "string") {
       return { error: "Đường dẫn ảnh đại diện không hợp lệ." };
     }
-    result.image = body.image.trim();
+    result.image = normalizePackageImage(body.image);
   }
 
   if (body.difficulty !== undefined) {

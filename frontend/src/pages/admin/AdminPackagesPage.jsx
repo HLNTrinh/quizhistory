@@ -17,7 +17,6 @@ import {
   Pencil,
   Percent,
   Plus,
-  RefreshCw,
   RotateCcw,
   ScrollText,
   Shield,
@@ -38,20 +37,6 @@ const PAGE_SIZE = 10;
 // Gói không lưu màu/biểu tượng trong DB: giao diện gán luân phiên theo thứ tự để hiển thị đồng nhất.
 const PACKAGE_TONES = ["violet", "green", "amber", "blue", "purple"];
 const PACKAGE_ICONS = [Flag, Ship, Landmark, Shield, ScrollText, Anchor, BookOpenCheck, Layers];
-
-const difficultyOptions = [
-  { value: "all", label: "Tất cả độ khó" },
-  { value: "easy", label: "Cơ bản" },
-  { value: "medium", label: "Trung bình" },
-  { value: "hard", label: "Nâng cao" }
-];
-
-const statusOptions = [
-  { value: "all", label: "Tất cả trạng thái" },
-  { value: "active", label: "Đang mở" },
-  { value: "draft", label: "Bản nháp" },
-  { value: "inactive", label: "Lưu trữ" }
-];
 
 const sortOptions = [
   { value: "newest", label: "Mới nhất" },
@@ -78,6 +63,7 @@ const EMPTY_FORM = {
   name: "",
   categoryId: "",
   description: "",
+  image: "",
   difficulty: "medium",
   order: "0",
   totalScore: "0",
@@ -94,6 +80,23 @@ function formatShortDate(value) {
   return new Intl.DateTimeFormat("vi-VN", options).format(date);
 }
 
+function normalizePackageImage(value) {
+  const image = value.trim();
+  if (!image) return "";
+
+  const publicIndex = image.toLowerCase().lastIndexOf("\\public\\");
+  if (publicIndex >= 0) {
+    return `/${image.slice(publicIndex + "\\public\\".length).replaceAll("\\", "/")}`;
+  }
+
+  const slashPublicIndex = image.toLowerCase().lastIndexOf("/public/");
+  if (slashPublicIndex >= 0) {
+    return `/${image.slice(slashPublicIndex + "/public/".length).replaceAll("\\", "/")}`;
+  }
+
+  return image.replaceAll("\\", "/");
+}
+
 function buildPageList(current, totalPages) {
   const total = Math.max(1, totalPages);
   const start = Math.max(1, Math.min(current - 2, total - 4));
@@ -107,11 +110,8 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [page, setPage] = useState(1);
@@ -174,8 +174,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
 
     const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), sort: sortOrder });
     if (debouncedQuery.trim()) params.set("q", debouncedQuery.trim());
-    if (difficultyFilter !== "all") params.set("difficulty", difficultyFilter);
-    if (statusFilter !== "all") params.set("status", statusFilter);
     if (categoryFilter !== "all") params.set("categoryId", categoryFilter);
 
     try {
@@ -193,16 +191,14 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       if (!hasDataRef.current) setLoadState("error");
       return { ok: false, error };
     }
-  }, [page, debouncedQuery, difficultyFilter, statusFilter, categoryFilter, sortOrder]);
+  }, [page, debouncedQuery, categoryFilter, sortOrder]);
 
   useEffect(() => {
     loadPackages();
   }, [loadPackages]);
 
   async function handleRefresh() {
-    setRefreshing(true);
     const result = await loadPackages();
-    setRefreshing(false);
     if (result.ok) showToast("Đã làm mới danh sách gói câu hỏi.");
     else if (result.error) showToast(`Không tải được danh sách: ${result.error.message}`);
   }
@@ -210,8 +206,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   function resetFilters() {
     setQuery("");
     setDebouncedQuery("");
-    setDifficultyFilter("all");
-    setStatusFilter("all");
     setCategoryFilter("all");
     setSortOrder("newest");
     setPage(1);
@@ -234,6 +228,7 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       name: row.name,
       categoryId: row.categoryId || "",
       description: row.description || "",
+      image: row.image || "",
       difficulty: row.difficulty,
       order: String(row.order),
       totalScore: String(row.totalScore),
@@ -262,6 +257,7 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       name,
       categoryId: form.categoryId || null,
       description: form.description.trim(),
+      image: normalizePackageImage(form.image),
       difficulty: form.difficulty,
       order: Number(form.order) || 0,
       totalScore: Number(form.totalScore) || 0,
@@ -379,8 +375,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
   const startItem = pagination.total ? (pagination.page - 1) * pagination.limit + 1 : 0;
   const endItem = Math.min(pagination.page * pagination.limit, pagination.total);
   const hasFilters = Boolean(debouncedQuery.trim())
-    || difficultyFilter !== "all"
-    || statusFilter !== "all"
     || categoryFilter !== "all";
 
   return (
@@ -502,33 +496,22 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
           </div>
 
           <section className="adm-filter-bar is-packages" aria-label="Bộ lọc gói câu hỏi">
-            <select
-              className="adm-filter-select"
-              value={difficultyFilter}
-              onChange={(event) => {
-                setDifficultyFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Lọc theo độ khó"
-            >
-              {difficultyOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-
-            <select
-              className="adm-filter-select"
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Lọc theo trạng thái"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
+            <label className="adm-sort">
+              <ArrowUpDown size={15} aria-hidden="true" />
+              <span className="adm-sort-label">Sắp xếp thứ tự hiển thị</span>
+              <select
+                value={sortOrder}
+                onChange={(event) => {
+                  setSortOrder(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Sắp xếp thứ tự hiển thị"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
 
             <select
               className="adm-filter-select"
@@ -546,32 +529,11 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
               ))}
             </select>
 
+            <button type="button" className="adm-ghost adm-filter-reset" onClick={resetFilters} disabled={!hasFilters}>
+              <RotateCcw size={15} /> Đặt lại bộ lọc
+            </button>
+
             <div className="adm-filter-actions">
-              <label className="adm-sort">
-                <ArrowUpDown size={15} aria-hidden="true" />
-                <span className="adm-sort-label">Sắp xếp thứ tự hiển thị</span>
-                <select
-                  value={sortOrder}
-                  onChange={(event) => {
-                    setSortOrder(event.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Sắp xếp thứ tự hiển thị"
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <button type="button" className="adm-ghost" onClick={resetFilters} disabled={!hasFilters}>
-                <RotateCcw size={15} /> Đặt lại lọc
-              </button>
-
-              <button type="button" className="adm-ghost" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw size={15} /> {refreshing ? "Đang tải..." : "Làm mới"}
-              </button>
-
               <button type="button" className="adm-primary" onClick={openCreatePackage}>
                 <Plus size={16} /> Tạo gói câu hỏi mới
               </button>
@@ -615,6 +577,14 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
                           <td>
                             <span className={`adm-pkg-thumb is-${tone}`} aria-hidden="true">
                               <ThumbIcon size={18} />
+                              {row.image ? (
+                                <img
+                                  src={row.image}
+                                  alt=""
+                                  loading="lazy"
+                                  onError={(event) => { event.currentTarget.style.display = "none"; }}
+                                />
+                              ) : null}
                             </span>
                           </td>
                           <td>
@@ -805,6 +775,22 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
               onChange={(event) => updateForm("description", event.target.value)}
               placeholder="Tóm tắt nội dung, bối cảnh lịch sử của gói câu hỏi..."
             />
+          </div>
+
+          <div className="adm-field">
+            <label htmlFor="adm-pkg-image">Link ảnh đại diện</label>
+            <input
+              id="adm-pkg-image"
+              type="text"
+              className="adm-input"
+              value={form.image}
+              onChange={(event) => updateForm("image", event.target.value)}
+              placeholder="https://example.com/anh.jpg hoặc D:\...\public\assets\images\anh.jpg"
+            />
+            <span className="adm-field-hint">
+              Có thể nhập URL Internet hoặc đường dẫn trong thư mục public. Ví dụ: <code>/assets/images/old-document.png</code>.
+              Để trống để dùng ảnh đại diện mặc định.
+            </span>
           </div>
 
           <div className="adm-field-row is-3">

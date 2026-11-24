@@ -223,13 +223,18 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
       showToast("Mật khẩu khởi tạo cần có ít nhất 8 ký tự.");
       return;
     }
+    if (userModal === "edit" && form.password && form.password.length < 8) {
+      showToast("Mật khẩu mới cần có ít nhất 8 ký tự.");
+      return;
+    }
 
     setSaving(true);
     try {
       if (userModal === "edit" && activeUser) {
+        const passwordUpdate = form.password ? { password: form.password } : {};
         await adminApi(`/admin/users/${activeUser.id}`, {
           method: "PATCH",
-          body: JSON.stringify({ fullName: name, email, role: form.role, status: form.status })
+          body: JSON.stringify({ fullName: name, email, role: form.role, status: form.status, ...passwordUpdate })
         });
         showToast(`Đã cập nhật người dùng “${name}”.`);
       } else {
@@ -550,6 +555,14 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
                             <div className="adm-member">
                               <span className={`adm-member-avatar is-${avatarTone(row)}`} aria-hidden="true">
                                 {buildInitials(row.name)}
+                                {row.avatar ? (
+                                  <img
+                                    src={row.avatar}
+                                    alt=""
+                                    loading="lazy"
+                                    onError={(event) => { event.currentTarget.style.display = "none"; }}
+                                  />
+                                ) : null}
                               </span>
                               <span className="adm-member-text">
                                 <strong>
@@ -808,7 +821,21 @@ export default function AdminUsersPage({ admin, onLogout, onNavigate }) {
                 Mật khẩu được băm bằng bcrypt trước khi lưu và không hiển thị lại sau này.
               </span>
             </div>
-          ) : null}
+          ) : (
+            <div className="adm-field">
+              <label htmlFor="adm-user-password">Mật khẩu mới (không bắt buộc)</label>
+              <input
+                id="adm-user-password"
+                type="password"
+                className="adm-input"
+                value={form.password}
+                onChange={(event) => updateForm("password", event.target.value)}
+                placeholder="Để trống nếu không muốn đổi mật khẩu"
+                autoComplete="new-password"
+              />
+              
+            </div>
+          )}
         </AdminFormModal>
       ) : null}
 
