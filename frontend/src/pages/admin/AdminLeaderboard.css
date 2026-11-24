@@ -101,6 +101,120 @@
 
 .adm-rank-chips-count { margin-left: auto; color: var(--adm-muted); font-size: 11px; font-weight: 600; }
 
+/* ---------------- Podium Top 3 ---------------- */
+.adm-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 4px 0 16px;
+}
+
+.adm-podium-card {
+  position: relative;
+  display: flex;
+  min-height: 190px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: 22px 16px 16px;
+  border: 1px solid #e7e3f7;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff 20%, #f7f5ff);
+  box-shadow: 0 10px 28px rgba(67, 56, 160, 0.08);
+  text-align: center;
+}
+
+.adm-podium-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, #c7c1dd, #ebe8f7);
+  content: "";
+}
+
+.adm-podium-card.is-rank-1 {
+  min-height: 210px;
+  border-color: #f1dca0;
+  background: linear-gradient(145deg, #fffdf7 10%, #fff4ce);
+  box-shadow: 0 12px 30px rgba(181, 128, 31, 0.14);
+}
+
+.adm-podium-card.is-rank-1::before {
+  background: linear-gradient(90deg, #dfb65c, #f7dc91);
+}
+
+.adm-podium-card.is-rank-2::before {
+  background: linear-gradient(90deg, #aeb5ca, #dde1ec);
+}
+
+.adm-podium-card.is-rank-3::before {
+  background: linear-gradient(90deg, #d79a72, #efd1bd);
+}
+
+.adm-podium-rank {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #716a91;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.adm-podium-card.is-rank-1 .adm-podium-rank { color: #a27616; }
+
+.adm-podium-avatar {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  margin-bottom: 10px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ddd7ff, #afa3f7);
+  color: #4732bb;
+  box-shadow: 0 8px 18px rgba(91, 70, 245, 0.18);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.adm-podium-card.is-rank-1 .adm-podium-avatar {
+  width: 78px;
+  height: 78px;
+  background: linear-gradient(135deg, #ffe7a8, #f2bd53);
+  color: #81550e;
+  box-shadow: 0 10px 22px rgba(181, 128, 31, 0.22);
+}
+
+.adm-podium-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--adm-ink);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-podium-xp {
+  margin-top: 4px;
+  color: var(--adm-violet);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.adm-podium-meta {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  color: var(--adm-muted);
+  font-size: 11px;
+}
+
+.adm-podium-meta b { color: var(--adm-body); }
+
 /* ---------------- Bảng xếp hạng ---------------- */
 .adm-table-rank { min-width: 1160px; }
 .adm-table-rank th { padding: 12px; }
@@ -283,6 +397,15 @@
 }
 
 @media (max-width: 760px) {
+  .adm-podium {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-podium-card,
+  .adm-podium-card.is-rank-1 {
+    min-height: 155px;
+  }
+
   .adm-table-rank { min-width: 1000px; }
   .adm-table-rank th { padding: 10px; }
   .adm-table-rank td { padding: 12px 10px; }

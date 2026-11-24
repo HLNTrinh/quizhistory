@@ -9,14 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Package,
   RefreshCw,
   RotateCcw,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   Star,
-  TrendingUp,
   Trophy,
   X
 } from "lucide-react";
@@ -191,56 +188,6 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
 
   const periodLabel = periodOptions.find((option) => option.value === period)?.label || "";
 
-  const statCards = useMemo(() => {
-    if (!stats) return [];
-    return [
-      {
-        id: "total",
-        label: "Tổng người học xếp hạng",
-        value: stats.totalLearners || 0,
-        icon: Trophy,
-        tone: "amber",
-        note: stats.activeThisWeek
-          ? `+${numberFormat.format(stats.activeThisWeek)} tích cực tuần này`
-          : "Chưa có hoạt động mới tuần này",
-        noteTone: "green",
-        noteIcon: TrendingUp
-      },
-      {
-        id: "top",
-        label: "Điểm XP cao nhất (Top 1)",
-        value: stats.topScore || 0,
-        unit: "XP",
-        icon: Sparkles,
-        tone: "amber",
-        pill: `Top 1: ${stats.topLearnerName || "Chưa có"}`,
-        pillTone: "amber",
-        pillIcon: Trophy
-      },
-      {
-        id: "average",
-        label: "Điểm trung bình toàn khoá",
-        value: stats.averageScore || 0,
-        unit: "XP",
-        icon: TrendingUp,
-        tone: "green",
-        note: `Tổng ${numberFormat.format(stats.totalLearners || 0)} học viên`,
-        noteTone: "green",
-        noteIcon: TrendingUp
-      },
-      {
-        id: "packages",
-        label: "Gói đã hoàn thành TB",
-        value: stats.avgPackagesCompleted || 0,
-        unit: "Gói",
-        format: "decimal",
-        icon: Package,
-        tone: "violet",
-        note: stats.totalPackages ? `Trên ${stats.totalPackages} gói bài học` : "Nội dung ôn luyện"
-      }
-    ];
-  }, [stats]);
-
   const pageList = useMemo(
     () => buildPageList(pagination.page, pagination.totalPages),
     [pagination]
@@ -270,43 +217,33 @@ export default function AdminLeaderboardPage({ admin, onLogout, onNavigate }) {
       }
       onFooterAction={(label) => showToast(`${label}: nội dung đang được cập nhật.`)}
     >
-      {/* 1. Lưới thống kê */}
-      <div className="adm-stat-grid">
-        {statCards.map((item) => {
-          const Icon = item.icon;
-          const NoteIcon = item.noteIcon;
-          const PillIcon = item.pillIcon;
-          return (
-            <article className="adm-stat" key={item.id}>
-              <div className="adm-stat-head">
-                <p className="adm-stat-label">{item.label}</p>
-                <span className={`adm-stat-icon is-${item.tone}`} aria-hidden="true">
-                  <Icon size={18} />
+      {/* Vị trí nổi bật Top 3: hạng 2 – hạng 1 – hạng 3 */}
+      {learners.length > 0 && page === 1 ? (
+        <section className="adm-podium" aria-label="Top 3 người học">
+          {[1, 0, 2].map((learnerIndex) => {
+            const learner = learners[learnerIndex];
+            if (!learner) return null;
+            const position = learnerIndex + 1;
+            return (
+              <article className={`adm-podium-card is-rank-${position}`} key={learner.id}>
+                <span className="adm-podium-rank">
+                  {position === 1 ? <Trophy size={16} /> : null}
+                  #{position}
                 </span>
-              </div>
-              <p className="adm-stat-value">
-                {item.format === "decimal" ? decimalFormat.format(item.value) : numberFormat.format(item.value)}
-                {item.unit ? <span>{item.unit}</span> : null}
-              </p>
-
-              {item.note ? (
-                <div className={`adm-rank-stat-note${item.noteTone ? ` is-${item.noteTone}` : ""}`}>
-                  {NoteIcon ? <NoteIcon size={13} aria-hidden="true" /> : null}
-                  <span>{item.note}</span>
+                <span className="adm-podium-avatar" aria-hidden="true">
+                  {learner.initials}
+                </span>
+                <strong className="adm-podium-name">{learner.name}</strong>
+                <span className="adm-podium-xp">{numberFormat.format(learner.xp)} XP</span>
+                <div className="adm-podium-meta">
+                  <span><b>{learner.packages}</b> gói</span>
+                  <span><b>{decimalFormat.format(learner.accuracy)}%</b> đúng</span>
                 </div>
-              ) : null}
-
-              {item.pill ? (
-                <div className="adm-stat-footer">
-                  <span className={`adm-pill is-${item.pillTone}`}>
-                    {PillIcon ? <PillIcon size={11} aria-hidden="true" /> : null} {item.pill}
-                  </span>
-                </div>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
+              </article>
+            );
+          })}
+        </section>
+      ) : null}
 
       {/* 2. Thanh lọc và sắp xếp */}
       <section className="adm-filter-bar is-leaderboard" aria-label="Bộ lọc bảng xếp hạng">
