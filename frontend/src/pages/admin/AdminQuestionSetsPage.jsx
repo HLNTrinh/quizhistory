@@ -83,7 +83,6 @@ const EMPTY_FORM = {
   description: "",
   order: "0",
   difficulty: "medium",
-  score: "0",
   timeLimit: "0",
   status: "draft",
   unlockType: "open"
@@ -255,7 +254,6 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
       description: row.description || "",
       order: String(row.order),
       difficulty: row.difficulty,
-      score: String(row.score),
       timeLimit: String(row.timeLimit),
       status: row.status,
       unlockType: row.unlockType
@@ -288,7 +286,6 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
       description: form.description.trim(),
       order: Number(form.order) || 0,
       difficulty: form.difficulty,
-      score: Number(form.score) || 0,
       timeLimit: Number(form.timeLimit) || 0,
       status: form.status,
       unlockType: form.unlockType
@@ -834,15 +831,8 @@ export default function AdminQuestionSetsPage({ admin, onLogout, onNavigate }) {
               />
             </div>
             <div className="adm-field">
-              <label htmlFor="adm-set-score">Điểm của bộ</label>
-              <input
-                id="adm-set-score"
-                type="number"
-                min="0"
-                className="adm-input"
-                value={form.score}
-                onChange={(event) => updateForm("score", event.target.value)}
-              />
+              <label>Điểm của bộ</label>
+              <input className="adm-input" value={setModal === "edit" ? `${activeSet?.score || 0} điểm (tự động)` : "Tự động tính từ điểm các câu hỏi"} readOnly />
             </div>
             <div className="adm-field">
               <label htmlFor="adm-set-time">Thời lượng (phút)</label>

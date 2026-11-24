@@ -7,6 +7,7 @@ import Category from "../Models/Category.js";
 import Package from "../Models/Package.js";
 import Question from "../Models/Question.js";
 import QuestionSet from "../Models/QuestionSet.js";
+import { syncPackageMetrics } from "../Services/aggregateMetrics.js";
 
 const STATUSES = ["draft", "active", "inactive"];
 const DIFFICULTIES = ["easy", "medium", "hard"];
@@ -112,7 +113,7 @@ function validatePayload(body, { partial = false } = {}) {
     result.status = body.status;
   }
 
-  for (const field of ["order", "totalScore", "estimatedTime"]) {
+  for (const field of ["order"]) {
     if (body[field] === undefined) continue;
     const number = Number(body[field]);
     if (!Number.isFinite(number) || number < 0) {
@@ -263,10 +264,11 @@ export async function adminCreatePackage(request, response) {
     image: value.image || "",
     difficulty: value.difficulty || "medium",
     order: value.order || 0,
-    totalScore: value.totalScore || 0,
-    estimatedTime: value.estimatedTime || 0,
+    totalScore: 0,
+    estimatedTime: 0,
     status: value.status || "draft"
   });
+  await syncPackageMetrics(created._id);
 
   const category = created.categoryId
     ? await Category.findById(created.categoryId).select("name").lean()
@@ -306,11 +308,10 @@ export async function adminUpdatePackage(request, response) {
   if (value.image !== undefined) learningPackage.image = value.image;
   if (value.difficulty !== undefined) learningPackage.difficulty = value.difficulty;
   if (value.order !== undefined) learningPackage.order = value.order;
-  if (value.totalScore !== undefined) learningPackage.totalScore = value.totalScore;
-  if (value.estimatedTime !== undefined) learningPackage.estimatedTime = value.estimatedTime;
   if (value.status !== undefined) learningPackage.status = value.status;
 
   await learningPackage.save();
+  await syncPackageMetrics(learningPackage._id);
 
   const [category, setCount, questionSetIds] = await Promise.all([
     learningPackage.categoryId

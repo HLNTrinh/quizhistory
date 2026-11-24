@@ -3,6 +3,7 @@ import { connectDatabase } from "./config/database.js";
 import { ensureCollections } from "./config/collections.js";
 import { seedDatabase } from "./app/Services/seedData.js";
 import { dropTopicModel } from "./database/migrations/002-drop-topic-model.js";
+import { syncAllAggregates } from "./app/Services/aggregateMetrics.js";
 import api from "./routes/api.js";
 import admin from "./routes/admin.js";
 import auth from "./routes/auth.js";
@@ -26,5 +27,6 @@ app.use((error, _request, response, _next) => {
 await connectDatabase();
 await ensureCollections();
 await seedDatabase();
+await syncAllAggregates();
 console.log("Drop legacy topic model:", await dropTopicModel());
 app.listen(port, "0.0.0.0", () => console.log(`API listening on ${port}`));

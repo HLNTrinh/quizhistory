@@ -66,8 +66,6 @@ const EMPTY_FORM = {
   image: "",
   difficulty: "medium",
   order: "0",
-  totalScore: "0",
-  estimatedTime: "0",
   status: "draft"
 };
 
@@ -231,8 +229,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       image: row.image || "",
       difficulty: row.difficulty,
       order: String(row.order),
-      totalScore: String(row.totalScore),
-      estimatedTime: String(row.estimatedTime),
       status: row.status
     });
     setPackageModal("edit");
@@ -260,8 +256,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
       image: normalizePackageImage(form.image),
       difficulty: form.difficulty,
       order: Number(form.order) || 0,
-      totalScore: Number(form.totalScore) || 0,
-      estimatedTime: Number(form.estimatedTime) || 0,
       status: form.status
     };
 
@@ -795,28 +789,6 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
 
           <div className="adm-field-row is-3">
             <div className="adm-field">
-              <label htmlFor="adm-pkg-xp">Điểm XP thưởng</label>
-              <input
-                id="adm-pkg-xp"
-                type="number"
-                min="0"
-                className="adm-input"
-                value={form.totalScore}
-                onChange={(event) => updateForm("totalScore", event.target.value)}
-              />
-            </div>
-            <div className="adm-field">
-              <label htmlFor="adm-pkg-minutes">Thời lượng (phút)</label>
-              <input
-                id="adm-pkg-minutes"
-                type="number"
-                min="0"
-                className="adm-input"
-                value={form.estimatedTime}
-                onChange={(event) => updateForm("estimatedTime", event.target.value)}
-              />
-            </div>
-            <div className="adm-field">
               <label htmlFor="adm-pkg-order">Thứ tự hiển thị</label>
               <input
                 id="adm-pkg-order"
@@ -826,6 +798,14 @@ export default function AdminPackagesPage({ admin, onLogout, onNavigate }) {
                 value={form.order}
                 onChange={(event) => updateForm("order", event.target.value)}
               />
+            </div>
+            <div className="adm-field">
+              <label>Điểm XP thưởng</label>
+              <input className="adm-input" value={packageModal === "edit" ? `${activePackage?.totalScore || 0} XP (tự động)` : "Tự động tính sau khi có bộ câu hỏi"} readOnly />
+            </div>
+            <div className="adm-field">
+              <label>Thời lượng</label>
+              <input className="adm-input" value={packageModal === "edit" ? `${activePackage?.estimatedTime || 0} phút (tự động)` : "Tự động tính từ thời lượng các bộ"} readOnly />
             </div>
           </div>
 

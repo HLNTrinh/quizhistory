@@ -7,6 +7,7 @@ import Package from "../Models/Package.js";
 import Progress from "../Models/Progress.js";
 import Question from "../Models/Question.js";
 import QuestionSet from "../Models/QuestionSet.js";
+import { syncPackageMetrics, syncQuestionSetMetrics } from "../Services/aggregateMetrics.js";
 
 const STATUSES = ["draft", "active", "inactive", "locked"];
 const DIFFICULTIES = ["easy", "medium", "hard"];
@@ -117,7 +118,7 @@ function validatePayload(body, { partial = false } = {}) {
     result.unlockType = body.unlockType;
   }
 
-  for (const field of ["order", "score", "timeLimit"]) {
+  for (const field of ["order", "timeLimit"]) {
     if (body[field] === undefined) continue;
     const number = Number(body[field]);
     if (!Number.isFinite(number) || number < 0) {
@@ -336,11 +337,12 @@ export async function adminCreateQuestionSet(request, response) {
     order: value.order ?? 0,
     sequenceOrder: value.order ?? 0,
     difficulty: value.difficulty || "medium",
-    score: value.score ?? 0,
+    score: 0,
     timeLimit: value.timeLimit ?? 0,
     unlockCondition: buildUnlockCondition(value.unlockType || "open"),
     status: value.status || "draft"
   });
+  await syncQuestionSetMetrics(created._id);
 
   const row = await loadQuestionSetRow(created._id);
   response.status(201).json({ questionSet: row });
@@ -357,6 +359,7 @@ export async function adminUpdateQuestionSet(request, response) {
   if (!questionSet) {
     return response.status(404).json({ message: "Không tìm thấy bộ câu hỏi cần cập nhật." });
   }
+  const oldPackageId = questionSet.packageId?.toString() || null;
 
   const { error, value } = validatePayload(request.body || {}, { partial: true });
   if (error) return response.status(400).json({ message: error });
@@ -392,10 +395,13 @@ export async function adminUpdateQuestionSet(request, response) {
     questionSet.order = value.order;
     questionSet.sequenceOrder = value.order;
   }
-  if (value.score !== undefined) questionSet.score = value.score;
   if (value.timeLimit !== undefined) questionSet.timeLimit = value.timeLimit;
 
   await questionSet.save();
+  await syncQuestionSetMetrics(questionSet._id);
+  if (oldPackageId && oldPackageId !== questionSet.packageId?.toString()) {
+    await syncPackageMetrics(oldPackageId);
+  }
 
   const row = await loadQuestionSetRow(questionSet._id);
   response.json({ questionSet: row });
@@ -434,6 +440,7 @@ export async function adminDeleteQuestionSet(request, response) {
     { $or: [{ currentSetId: questionSet._id }, { currentSet: questionSet._id }] },
     { $unset: { currentSetId: "", currentSet: "" } }
   );
+  if (questionSet.packageId) await syncPackageMetrics(questionSet.packageId);
 
   response.json({
     message: "Đã xóa bộ câu hỏi.",

@@ -7,6 +7,7 @@ import Category from "../Models/Category.js";
 import Package from "../Models/Package.js";
 import Question from "../Models/Question.js";
 import QuestionSet from "../Models/QuestionSet.js";
+import { syncQuestionSetMetrics } from "../Services/aggregateMetrics.js";
 
 const DIFFICULTIES = ["easy", "medium", "hard"];
 const DIFFICULTY_RANK = { easy: 1, medium: 2, hard: 3 };
@@ -407,6 +408,7 @@ export async function adminCreateQuestion(request, response) {
     order,
     sequenceOrder: order
   });
+  await syncQuestionSetMetrics(questionSet._id);
 
   response.status(201).json({ question: await loadQuestionRow(question._id) });
 }
@@ -425,6 +427,7 @@ export async function adminUpdateQuestion(request, response) {
   const { error, value } = validatePayload(request.body || {}, { partial: true });
   if (error) return response.status(400).json({ message: error });
 
+  const oldQuestionSetId = question.questionSetId?.toString();
   if (value.questionSetId !== undefined) {
     const questionSet = await QuestionSet.findById(value.questionSetId).select("_id").lean();
     if (!questionSet) {
@@ -451,6 +454,10 @@ export async function adminUpdateQuestion(request, response) {
   }
 
   await question.save();
+  await syncQuestionSetMetrics(oldQuestionSetId);
+  if (question.questionSetId?.toString() !== oldQuestionSetId) {
+    await syncQuestionSetMetrics(question.questionSetId);
+  }
 
   response.json({ question: await loadQuestionRow(question._id) });
 }
@@ -461,7 +468,7 @@ export async function adminDeleteQuestion(request, response) {
     return response.status(400).json({ message: "Mã câu hỏi không hợp lệ." });
   }
 
-  const question = await Question.findById(id).select("_id").lean();
+  const question = await Question.findById(id).select("_id questionSetId").lean();
   if (!question) {
     return response.status(404).json({ message: "Không tìm thấy câu hỏi cần xóa." });
   }
@@ -469,6 +476,7 @@ export async function adminDeleteQuestion(request, response) {
   // Đếm số lượt làm bài có tham chiếu câu hỏi này để cảnh báo (không chặn xóa).
   const referencedAttempts = await Attempt.countDocuments({ "answers.question": question._id });
   await Question.deleteOne({ _id: question._id });
+  await syncQuestionSetMetrics(question.questionSetId);
 
   response.json({
     message: "Đã xóa câu hỏi.",
